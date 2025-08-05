@@ -286,6 +286,8 @@ try:
     from database.database import init_database, db_manager, DatabaseUtils
     from database.models import *
     from gui.main_window import MainWindow
+    from gui.login_window import LoginWindow
+    from utils.auth import get_current_user
 except ImportError:
     try:
         import database.database as db_module
@@ -293,6 +295,8 @@ except ImportError:
         from database.models import *
         import gui.main_window as main_window_module
         from gui.main_window import MainWindow
+        from gui.login_window import LoginWindow
+        from utils.auth import get_current_user
     except ImportError:
         subdirs = ['database', 'gui', 'utils']
         for subdir in subdirs:
@@ -304,6 +308,8 @@ except ImportError:
             from database import init_database, db_manager, DatabaseUtils
             from models import *
             from main_window import MainWindow
+            from login_window import LoginWindow
+            from auth import get_current_user
         except ImportError as e:
             messagebox.showerror("Import Error", 
                                f"Failed to import required modules: {e}\n"
@@ -327,15 +333,30 @@ class ConstructionPOSApp:
         
         # Initialize database
         self.init_database()
-        
+
+        # Show login window before proceeding
+        if not self.show_login():
+            self.root.destroy()
+            self.root = None
+            return
+
         # Setup modern theme
         self.setup_modern_theme()
-        
+
         # Create main window
         self.main_window = MainWindow(self.root)
         
         # Setup menu
         self.setup_menu()
+
+    def show_login(self) -> bool:
+        """Display login window and return True if a user logged in."""
+        self.root.withdraw()
+        login_win = tk.Toplevel(self.root)
+        login_app = LoginWindow(login_win)
+        self.root.wait_window(login_win)
+        self.root.deiconify()
+        return get_current_user() is not None
         
     def setup_modern_theme(self):
         """Setup modern professional theme"""
@@ -857,6 +878,8 @@ for construction material shops and hardware stores.
     
     def run(self):
         """Start the application"""
+        if self.root is None:
+            return
         try:
             self.root.mainloop()
         except KeyboardInterrupt:

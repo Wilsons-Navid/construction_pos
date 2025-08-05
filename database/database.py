@@ -153,6 +153,7 @@ from .models import Base
 import os
 import sys
 import tempfile
+from utils.auth import hash_password
 
 # Get the correct application directory for both development and compiled versions
 def get_app_dir():
@@ -317,7 +318,7 @@ def init_database():
             raise Exception("Failed to create database session")
         
         try:
-            from .models import Setting
+            from .models import Setting, User
             
             default_settings = [
                 {"key": "shop_name", "value": "Construction Materials Shop", "description": "Shop name"},
@@ -344,13 +345,25 @@ def init_database():
                 print(f"✅ Added {settings_added} default settings")
             else:
                 print("✅ Default settings already exist")
-                
+
+            # Ensure a default admin user exists
+            if not session.query(User).filter(User.username == "admin").first():
+                admin_user = User(
+                    username="admin",
+                    password_hash=hash_password("admin"),
+                    role="admin",
+                    is_active=True,
+                )
+                session.add(admin_user)
+                session.commit()
+                print("✅ Default admin user created (username: admin)")
+
         except Exception as e:
             session.rollback()
             print(f"⚠️  Warning: Error adding default settings: {e}")
         finally:
             db_manager.close_session(session)
-        
+
         print("✅ Database initialization completed!")
         return True
         

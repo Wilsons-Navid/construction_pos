@@ -110,7 +110,7 @@ class ReceiptPrinter:
             sale_info = [
                 ['Receipt #:', sale.sale_number],
                 ['Date:', sale.created_at.strftime('%Y-%m-%d %H:%M:%S')],
-                ['Cashier:', sale.cashier or 'System'],
+                ['Cashier:', sale.user.username if sale.user else 'System'],
                 ['Customer:', sale.customer.name if sale.customer else 'Walk-in Customer']
             ]
             
@@ -236,7 +236,7 @@ class ReceiptPrinter:
             receipt_lines.append("")
             receipt_lines.append(f"Receipt #: {sale.sale_number}")
             receipt_lines.append(f"Date: {sale.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
-            receipt_lines.append(f"Cashier: {sale.cashier or 'System'}")
+            receipt_lines.append(f"Cashier: {sale.user.username if sale.user else 'System'}")
             customer_name = sale.customer.name if sale.customer else 'Walk-in Customer'
             receipt_lines.append(f"Customer: {customer_name}")
             receipt_lines.append("-" * 40)
