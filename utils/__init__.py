@@ -1,8 +1,7 @@
 # utils/__init__.py
 """Utilities package for Construction POS System"""
 
-from .receipt_printer import ReceiptPrinter
+# Intentionally avoid importing submodules at package import time to prevent
+# circular import issues. Modules should be imported explicitly where needed.
 
-__all__ = [
-    'ReceiptPrinter'
-]
+__all__ = []
