@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 from database.database import db_manager, DatabaseUtils
 from database.models import Product, Sale, SaleItem, Customer, StockMovement
+from utils.auth import get_current_user
 
 class POSWindow:
     def __init__(self, parent):
@@ -555,6 +556,7 @@ class POSWindow:
         session = db_manager.get_session()
         try:
             # Create sale record
+            current_user = get_current_user()
             sale = Sale(
                 sale_number=DatabaseUtils.generate_sale_number(),
                 customer_id=customer_id,
@@ -565,7 +567,7 @@ class POSWindow:
                 payment_status="paid",
                 amount_paid=paid,
                 change_amount=max(0, paid - total_with_tax),
-                cashier="System"  # TODO: Add user management
+                user_id=current_user.id if current_user else None,
             )
             session.add(sale)
             session.flush()  # Get sale ID
@@ -594,7 +596,7 @@ class POSWindow:
                     reference_type="sale",
                     reference_id=sale.id,
                     notes=f"Sale #{sale.sale_number}",
-                    created_by="System"
+                    created_by=current_user.username if current_user else "System"
                 )
                 session.add(stock_movement)
             
