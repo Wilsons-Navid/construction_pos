@@ -66,6 +66,11 @@ class MainWindow:
         self.status_label.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
 
     def clear_content(self):
+        if self.current_window and hasattr(self.current_window, "destroy"):
+            try:
+                self.current_window.destroy()
+            except Exception:
+                pass
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 

@@ -1,6 +1,6 @@
 # gui/pos_window.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, TclError
 from datetime import datetime
 from database.database import db_manager, DatabaseUtils
 from database.models import Product, Sale, SaleItem, Customer, StockMovement
@@ -18,8 +18,9 @@ class POSWindow:
         self.setup_ui()
         self.load_products()
         self.load_customers()
+        self.inventory_binding = self.parent.bind('<<InventoryChanged>>', self.on_inventory_changed)
+        self.dashboard_job = None
         self.update_dashboard()
-        self.parent.bind('<<InventoryChanged>>', self.on_inventory_changed)
         
     def setup_ui(self):
         """Setup POS user interface"""
@@ -232,16 +233,19 @@ class POSWindow:
         session = db_manager.get_session()
         try:
             from database.models import Category
-            
+
             # Load categories for filter
             categories = session.query(Category).all()
             category_names = ["All Categories"] + [cat.name for cat in categories]
-            self.category_combo['values'] = category_names
-            self.category_combo.set("All Categories")
-            
+            try:
+                self.category_combo['values'] = category_names
+                self.category_combo.set("All Categories")
+            except TclError:
+                return
+
             # Load products
             self.refresh_products()
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load products: {e}")
         finally:
@@ -329,9 +333,9 @@ class POSWindow:
 
         # Schedule periodic refresh
         try:
-            self.parent.after(60000, self.update_dashboard)
+            self.dashboard_job = self.parent.after(60000, self.update_dashboard)
         except Exception:
-            pass
+            self.dashboard_job = None
 
     def on_inventory_changed(self, event=None):
         """Handle inventory updates from other windows"""
@@ -724,3 +728,18 @@ class POSWindow:
         self.search_var.set("")
         self.refresh_products()
         self.update_dashboard()
+
+
+    def destroy(self):
+        if self.dashboard_job:
+            try:
+                self.parent.after_cancel(self.dashboard_job)
+            except Exception:
+                pass
+            self.dashboard_job = None
+        if self.inventory_binding:
+            try:
+                self.parent.unbind('<<InventoryChanged>>', self.inventory_binding)
+            except Exception:
+                pass
+
