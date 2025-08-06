@@ -440,6 +440,17 @@ class InventoryWindow:
             self.parent.event_generate('<<InventoryChanged>>', when='tail')
         except Exception:
             pass
+
+    def focus_product(self, product_id):
+        """Select and scroll to a product in the treeview"""
+        try:
+            for item in self.products_tree.get_children():
+                if self.products_tree.item(item)['values'][0] == product_id:
+                    self.products_tree.selection_set(item)
+                    self.products_tree.see(item)
+                    break
+        except Exception:
+            pass
     
     # Event handlers
     def on_product_search(self, *args):
@@ -462,8 +473,12 @@ class InventoryWindow:
                 product = Product(**dialog.result)
                 session.add(product)
                 session.commit()
+                product_id = product.id
                 messagebox.showinfo("Success", "Product added successfully!")
+                # Clear any active search so the new product is visible
+                self.product_search_var.set('')
                 self.refresh_products()
+                self.focus_product(product_id)
                 self.refresh_alerts()
                 self.notify_change()
             except Exception as e:
@@ -492,10 +507,13 @@ class InventoryWindow:
             if dialog.result:
                 for key, value in dialog.result.items():
                     setattr(product, key, value)
-
                 session.commit()
+                product_id = product.id
                 messagebox.showinfo("Success", "Product updated successfully!")
+                # Reset search to ensure updated product is shown
+                self.product_search_var.set('')
                 self.refresh_products()
+                self.focus_product(product_id)
                 self.refresh_alerts()
                 self.notify_change()
                 
@@ -526,6 +544,8 @@ class InventoryWindow:
                 product.is_active = False
                 session.commit()
                 messagebox.showinfo("Success", "Product deactivated successfully!")
+                # Clear search so deactivated product disappears consistently
+                self.product_search_var.set('')
                 self.refresh_products()
                 self.notify_change()
                 
@@ -711,9 +731,11 @@ class InventoryWindow:
                 created_by="System"
             )
             session.add(movement)
-            
+
             session.commit()
             messagebox.showinfo("Success", "Stock movement processed successfully!")
+            # Clear search so stock updates are always visible
+            self.product_search_var.set('')
             self.refresh_products()
             self.refresh_movements()
             self.refresh_alerts()
