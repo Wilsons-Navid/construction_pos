@@ -5,7 +5,8 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
-from database.database import DatabaseUtils
+from database.database import DatabaseUtils, get_app_dir
+from utils.i18n import translate as _
 from datetime import datetime
 import os
 
@@ -73,10 +74,10 @@ class ReceiptPrinter:
     def generate_receipt(self, sale):
         """Generate PDF receipt for a sale"""
         try:
-            # Create receipts directory if it doesn't exist
-            receipts_dir = "receipts"
+            # Create receipts directory inside the application folder
+            receipts_dir = os.path.join(get_app_dir(), "receipts")
             if not os.path.exists(receipts_dir):
-                os.makedirs(receipts_dir)
+                os.makedirs(receipts_dir, exist_ok=True)
             
             # Generate filename
             filename = f"receipt_{sale.sale_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -96,7 +97,7 @@ class ReceiptPrinter:
             story = []
             
             # Shop header
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             shop_address = DatabaseUtils.get_setting_value('shop_address', '123 Main Street')
             shop_phone = DatabaseUtils.get_setting_value('shop_phone', '+1234567890')
             
@@ -104,14 +105,14 @@ class ReceiptPrinter:
             story.append(Paragraph(f"{shop_address}<br/>{shop_phone}", self.styles['ShopInfo']))
             
             # Receipt header
-            story.append(Paragraph("SALES RECEIPT", self.styles['ReceiptHeader']))
+            story.append(Paragraph(_("sales_receipt"), self.styles['ReceiptHeader']))
             
             # Sale information
             sale_info = [
-                ['Receipt #:', sale.sale_number],
-                ['Date:', sale.created_at.strftime('%Y-%m-%d %H:%M:%S')],
-                ['Cashier:', sale.user.username if sale.user else 'System'],
-                ['Customer:', sale.customer.name if sale.customer else 'Walk-in Customer']
+                [_('receipt_number'), sale.sale_number],
+                [_('date'), sale.created_at.strftime('%Y-%m-%d %H:%M:%S')],
+                [_('cashier'), sale.user.username if sale.user else 'System'],
+                [_('customer_label') + ':', sale.customer.name if sale.customer else 'Walk-in Customer']
             ]
             
             sale_info_table = Table(sale_info, colWidths=[1.5*inch, 3*inch])
@@ -126,7 +127,7 @@ class ReceiptPrinter:
             story.append(Spacer(1, 12))
             
             # Items table
-            items_data = [['Item', 'Qty', 'Unit Price', 'Total']]
+            items_data = [[_('items'), _('qty'), _('unit_price'), _('total')]]
             
             currency = DatabaseUtils.get_setting_value('currency', 'FCFA')
             
@@ -161,18 +162,18 @@ class ReceiptPrinter:
             
             # Totals section
             totals_data = [
-                ['Subtotal:', f"{sale.subtotal:,.0f} {currency}"],
-                ['Tax:', f"{sale.tax_amount:,.0f} {currency}"],
-                ['Total:', f"{sale.total_amount:,.0f} {currency}"]
+                [_('subtotal_label'), f"{sale.subtotal:,.0f} {currency}"],
+                [_('tax_label'), f"{sale.tax_amount:,.0f} {currency}"],
+                [_('total_label'), f"{sale.total_amount:,.0f} {currency}"]
             ]
             
             if sale.discount_amount > 0:
                 totals_data.insert(-1, ['Discount:', f"-{sale.discount_amount:,.0f} {currency}"])
             
             totals_data.extend([
-                ['Payment Method:', sale.payment_method.title()],
-                ['Amount Paid:', f"{sale.amount_paid:,.0f} {currency}"],
-                ['Change:', f"{sale.change_amount:,.0f} {currency}"]
+                [_('payment_method_label'), sale.payment_method.title()],
+                [_('amount_paid_label'), f"{sale.amount_paid:,.0f} {currency}"],
+                [_('change_label'), f"{sale.change_amount:,.0f} {currency}"]
             ])
             
             totals_table = Table(totals_data, colWidths=[2*inch, 2*inch])
@@ -204,17 +205,17 @@ class ReceiptPrinter:
     def generate_simple_receipt(self, sale):
         """Generate a simple text receipt for thermal printers"""
         try:
-            # Create receipts directory if it doesn't exist
-            receipts_dir = "receipts"
+            # Create receipts directory inside the application folder
+            receipts_dir = os.path.join(get_app_dir(), "receipts")
             if not os.path.exists(receipts_dir):
-                os.makedirs(receipts_dir)
+                os.makedirs(receipts_dir, exist_ok=True)
             
             # Generate filename
             filename = f"receipt_{sale.sale_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
             filepath = os.path.join(receipts_dir, filename)
             
             # Get settings
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             shop_address = DatabaseUtils.get_setting_value('shop_address', '123 Main Street')
             shop_phone = DatabaseUtils.get_setting_value('shop_phone', '+1234567890')
             currency = DatabaseUtils.get_setting_value('currency', 'FCFA')
@@ -340,7 +341,7 @@ class ReceiptPrinter:
             Date: {datetime.now().strftime('%Y-%m-%d')}
             
             Best regards,
-            {DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')}
+            {DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')}
             """
             
             msg.attach(MIMEText(body, 'plain'))
@@ -409,7 +410,7 @@ class ReceiptPrinter:
             story = []
             
             # Report header
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             story.append(Paragraph(shop_name, self.styles['ShopName']))
             story.append(Paragraph(f"Daily Sales Report - {date.strftime('%Y-%m-%d')}", self.styles['ReceiptHeader']))
             story.append(Spacer(1, 12))

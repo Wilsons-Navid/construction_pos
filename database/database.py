@@ -321,11 +321,13 @@ def init_database():
             from .models import Setting, User
             
             default_settings = [
-                {"key": "shop_name", "value": "Construction Materials Shop", "description": "Shop name"},
+                {"key": "shop_name", "value": "Quincaillerie Fexson", "description": "Shop name"},
                 {"key": "shop_address", "value": "123 Main Street", "description": "Shop address"},
                 {"key": "shop_phone", "value": "+1234567890", "description": "Shop phone"},
                 {"key": "tax_rate", "value": "18.0", "description": "Tax rate percentage"},
                 {"key": "currency", "value": "FCFA", "description": "Currency symbol"},
+                {"key": "language", "value": "en", "description": "UI language"},
+                {"key": "theme", "value": "light", "description": "UI theme"},
                 {"key": "receipt_footer", "value": "Thank you for your business!", "description": "Receipt footer text"}
             ]
             
