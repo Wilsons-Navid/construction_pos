@@ -249,30 +249,34 @@ class InventoryWindow:
         self.refresh_movements()
         self.refresh_alerts()
     
-    def refresh_products(self, search_term=""):
+    def refresh_products(self, search_term=None):
         """Refresh products list"""
         session = db_manager.get_session()
         try:
             # Clear existing items
             for item in self.products_tree.get_children():
                 self.products_tree.delete(item)
-            
-            # Build query
-            query = session.query(Product)
-            
+
+            # Build query - only show active products
+            query = session.query(Product).filter(Product.is_active == True)
+
+            # Use provided search term or current search box value
+            if search_term is None:
+                search_term = self.product_search_var.get().strip()
+
             if search_term:
                 query = query.filter(
-                    Product.name.contains(search_term) | 
+                    Product.name.contains(search_term) |
                     Product.barcode.contains(search_term)
                 )
-            
+
             products = query.order_by(Product.name).all()
-            
+
             # Populate treeview
             for product in products:
                 category_name = product.category.name if product.category else "N/A"
                 status = "Active" if product.is_active else "Inactive"
-                
+
                 values = (
                     product.id,
                     product.name,
@@ -285,16 +289,16 @@ class InventoryWindow:
                     product.min_stock_level,
                     status
                 )
-                
+
                 item_id = self.products_tree.insert('', tk.END, values=values)
-                
+
                 # Highlight low stock items
                 if product.stock_quantity <= product.min_stock_level:
                     self.products_tree.item(item_id, tags=('low_stock',))
-            
+
             # Configure tags
             self.products_tree.tag_configure('low_stock', background='#ffeeee', foreground='red')
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to refresh products: {e}")
         finally:
@@ -424,11 +428,18 @@ class InventoryWindow:
             self.alerts_tree.tag_configure('out_of_stock', background='#ff6666', foreground='white')
             self.alerts_tree.tag_configure('critical', background='#ffaaaa')
             self.alerts_tree.tag_configure('low_stock', background='#ffffaa')
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to refresh alerts: {e}")
         finally:
             session.close()
+
+    def notify_change(self):
+        """Notify other windows that inventory data has changed"""
+        try:
+            self.parent.event_generate('<<InventoryChanged>>', when='tail')
+        except Exception:
+            pass
     
     # Event handlers
     def on_product_search(self, *args):
@@ -454,6 +465,7 @@ class InventoryWindow:
                 messagebox.showinfo("Success", "Product added successfully!")
                 self.refresh_products()
                 self.refresh_alerts()
+                self.notify_change()
             except Exception as e:
                 session.rollback()
                 messagebox.showerror("Error", f"Failed to add product: {e}")
@@ -480,11 +492,12 @@ class InventoryWindow:
             if dialog.result:
                 for key, value in dialog.result.items():
                     setattr(product, key, value)
-                
+
                 session.commit()
                 messagebox.showinfo("Success", "Product updated successfully!")
                 self.refresh_products()
                 self.refresh_alerts()
+                self.notify_change()
                 
         except Exception as e:
             session.rollback()
@@ -514,6 +527,7 @@ class InventoryWindow:
                 session.commit()
                 messagebox.showinfo("Success", "Product deactivated successfully!")
                 self.refresh_products()
+                self.notify_change()
                 
         except Exception as e:
             session.rollback()
@@ -561,6 +575,7 @@ class InventoryWindow:
                     self.refresh_products()
                     self.refresh_movements()
                     self.refresh_alerts()
+                    self.notify_change()
                     
             except Exception as e:
                 session.rollback()
@@ -702,6 +717,7 @@ class InventoryWindow:
             self.refresh_products()
             self.refresh_movements()
             self.refresh_alerts()
+            self.notify_change()
             
         except Exception as e:
             session.rollback()

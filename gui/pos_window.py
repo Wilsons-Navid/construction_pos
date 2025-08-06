@@ -12,11 +12,13 @@ class POSWindow:
         self.parent = parent
         self.cart_items = []
         self.selected_customer = None
-        
+
         # Create main POS interface
         self.setup_ui()
         self.load_products()
         self.load_customers()
+        self.update_dashboard()
+        self.parent.bind('<<InventoryChanged>>', self.on_inventory_changed)
         
     def setup_ui(self):
         """Setup POS user interface"""
@@ -99,10 +101,22 @@ class POSWindow:
         # Add to cart button
         add_button = ttk.Button(products_frame, text="Add to Cart", command=self.add_to_cart)
         add_button.grid(row=2, column=0, pady=10)
-        
+
         # Configure grid weights
         self.left_panel.columnconfigure(0, weight=1)
         self.left_panel.rowconfigure(1, weight=1)
+
+        # Dashboard frame for quick stats
+        dashboard_frame = ttk.LabelFrame(self.left_panel, text="Dashboard", padding="5")
+        dashboard_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
+
+        ttk.Label(dashboard_frame, text="Total Sales:").grid(row=0, column=0, sticky=tk.W)
+        self.total_sales_var = tk.StringVar(value="0")
+        ttk.Label(dashboard_frame, textvariable=self.total_sales_var).grid(row=0, column=1, sticky=tk.W)
+
+        ttk.Label(dashboard_frame, text="Low Stock Items:").grid(row=1, column=0, sticky=tk.W)
+        self.low_stock_var = tk.StringVar(value="0")
+        ttk.Label(dashboard_frame, textvariable=self.low_stock_var).grid(row=1, column=1, sticky=tk.W)
     
     def setup_right_panel(self):
         """Setup right panel with cart and checkout"""
@@ -284,6 +298,32 @@ class POSWindow:
             messagebox.showerror("Error", f"Failed to load customers: {e}")
         finally:
             session.close()
+
+    def update_dashboard(self):
+        """Update dashboard statistics"""
+        session = db_manager.get_session()
+        try:
+            total_sales = session.query(func.count(Sale.id)).scalar() or 0
+            low_stock = session.query(func.count(Product.id)).filter(
+                Product.is_active == True,
+                Product.stock_quantity <= Product.min_stock_level
+            ).scalar() or 0
+
+            self.total_sales_var.set(str(total_sales))
+            self.low_stock_var.set(str(low_stock))
+        finally:
+            session.close()
+
+        # Schedule periodic refresh
+        try:
+            self.parent.after(60000, self.update_dashboard)
+        except Exception:
+            pass
+
+    def on_inventory_changed(self, event=None):
+        """Handle inventory updates from other windows"""
+        self.load_products()
+        self.update_dashboard()
     
     def on_search_change(self, *args):
         """Handle search text change"""
@@ -625,6 +665,8 @@ class POSWindow:
             
             # Clear cart for new sale
             self.new_sale()
+            self.refresh_products()
+            self.update_dashboard()
             
         except Exception as e:
             session.rollback()
@@ -658,10 +700,12 @@ class POSWindow:
         self.calculate_totals()
         self.paid_var.set("")
         self.search_var.set("")
-        
+
         # Reset to default customer
         if self.customer_combo['values']:
             self.customer_combo.set(self.customer_combo['values'][0])
-        
-        # Focus search box
+
+        # Focus search box and refresh product list
         self.search_var.set("")
+        self.refresh_products()
+        self.update_dashboard()
