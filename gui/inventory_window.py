@@ -467,6 +467,7 @@ class InventoryWindow:
     def add_product(self):
         """Add new product"""
         dialog = ProductDialog(self.parent, "Add Product")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             session = db_manager.get_session()
             try:
@@ -502,8 +503,9 @@ class InventoryWindow:
             if not product:
                 messagebox.showerror("Error", "Product not found.")
                 return
-            
+
             dialog = ProductDialog(self.parent, "Edit Product", product)
+            self.parent.wait_window(dialog.dialog)
             if dialog.result:
                 for key, value in dialog.result.items():
                     setattr(product, key, value)
@@ -565,8 +567,9 @@ class InventoryWindow:
         product_id = self.products_tree.item(selection[0])['values'][0]
         product_name = self.products_tree.item(selection[0])['values'][1]
         current_stock = int(self.products_tree.item(selection[0])['values'][7])
-        
+
         dialog = StockAdjustmentDialog(self.parent, product_name, current_stock)
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             session = db_manager.get_session()
             try:
@@ -607,6 +610,7 @@ class InventoryWindow:
     def add_category(self):
         """Add new category"""
         dialog = CategoryDialog(self.parent, "Add Category")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             session = db_manager.get_session()
             try:
@@ -636,12 +640,13 @@ class InventoryWindow:
             if not category:
                 messagebox.showerror("Error", "Category not found.")
                 return
-            
+
             dialog = CategoryDialog(self.parent, "Edit Category", category)
+            self.parent.wait_window(dialog.dialog)
             if dialog.result:
                 for key, value in dialog.result.items():
                     setattr(category, key, value)
-                
+
                 session.commit()
                 messagebox.showinfo("Success", "Category updated successfully!")
                 self.refresh_categories()
@@ -692,12 +697,14 @@ class InventoryWindow:
     def add_stock(self):
         """Add stock to a product"""
         dialog = StockMovementDialog(self.parent, "Add Stock", "in")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             self.process_stock_movement(dialog.result)
-    
+
     def remove_stock(self):
         """Remove stock from a product"""
         dialog = StockMovementDialog(self.parent, "Remove Stock", "out")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             self.process_stock_movement(dialog.result)
     
