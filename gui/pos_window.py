@@ -612,8 +612,12 @@ class POSWindow:
                     customer_text = f"Customer {next_num}"
                 customer = Customer(name=customer_text)
                 session.add(customer)
-                session.flush()
+                session.commit()
                 customer_id = customer.id
+        except Exception as e:
+            session.rollback()
+            messagebox.showerror("Customer Error", f"Failed to save customer: {e}")
+            return
         finally:
             session.close()
 
@@ -713,9 +717,8 @@ class POSWindow:
         self.paid_var.set("")
         self.search_var.set("")
 
-        # Reset to default customer
-        if self.customer_combo['values']:
-            self.customer_combo.set(self.customer_combo['values'][0])
+        # Reload customers to include new entries and reset selection
+        self.load_customers()
 
         # Focus search box and refresh product list
         self.search_var.set("")
