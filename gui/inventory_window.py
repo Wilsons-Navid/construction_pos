@@ -463,6 +463,8 @@ class InventoryWindow:
                 session.add(product)
                 session.commit()
                 messagebox.showinfo("Success", "Product added successfully!")
+                # Clear any active search so the new product is visible
+                self.product_search_var.set('')
                 self.refresh_products()
                 self.refresh_alerts()
                 self.notify_change()
@@ -495,6 +497,8 @@ class InventoryWindow:
 
                 session.commit()
                 messagebox.showinfo("Success", "Product updated successfully!")
+                # Reset search to ensure updated product is shown
+                self.product_search_var.set('')
                 self.refresh_products()
                 self.refresh_alerts()
                 self.notify_change()
@@ -526,6 +530,8 @@ class InventoryWindow:
                 product.is_active = False
                 session.commit()
                 messagebox.showinfo("Success", "Product deactivated successfully!")
+                # Clear search so deactivated product disappears consistently
+                self.product_search_var.set('')
                 self.refresh_products()
                 self.notify_change()
                 
@@ -711,9 +717,11 @@ class InventoryWindow:
                 created_by="System"
             )
             session.add(movement)
-            
+
             session.commit()
             messagebox.showinfo("Success", "Stock movement processed successfully!")
+            # Clear search so stock updates are always visible
+            self.product_search_var.set('')
             self.refresh_products()
             self.refresh_movements()
             self.refresh_alerts()
