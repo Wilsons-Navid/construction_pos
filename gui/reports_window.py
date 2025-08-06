@@ -50,15 +50,24 @@ class ReportsWindow:
         self.from_date_var = tk.StringVar(value=date.today().strftime("%Y-%m-%d"))
         from_date_entry = ttk.Entry(control_frame, textvariable=self.from_date_var, width=12)
         from_date_entry.grid(row=0, column=1, padx=5)
-        
+
         ttk.Label(control_frame, text="To Date:").grid(row=0, column=2, sticky=tk.W, padx=(10, 5))
         self.to_date_var = tk.StringVar(value=date.today().strftime("%Y-%m-%d"))
         to_date_entry = ttk.Entry(control_frame, textvariable=self.to_date_var, width=12)
         to_date_entry.grid(row=0, column=3, padx=5)
-        
+
+        # Time range selection
+        ttk.Label(control_frame, text="From Time:").grid(row=1, column=0, sticky=tk.W, padx=(0, 5))
+        self.from_time_var = tk.StringVar(value="00:00")
+        ttk.Entry(control_frame, textvariable=self.from_time_var, width=10).grid(row=1, column=1, padx=5)
+
+        ttk.Label(control_frame, text="To Time:").grid(row=1, column=2, sticky=tk.W, padx=(10, 5))
+        self.to_time_var = tk.StringVar(value="23:59")
+        ttk.Entry(control_frame, textvariable=self.to_time_var, width=10).grid(row=1, column=3, padx=5)
+
         # Quick date buttons
         quick_dates_frame = ttk.Frame(control_frame)
-        quick_dates_frame.grid(row=1, column=0, columnspan=4, pady=10)
+        quick_dates_frame.grid(row=2, column=0, columnspan=4, pady=10)
         
         ttk.Button(quick_dates_frame, text="Today", command=self.set_today).pack(side=tk.LEFT, padx=2)
         ttk.Button(quick_dates_frame, text="Yesterday", command=self.set_yesterday).pack(side=tk.LEFT, padx=2)
@@ -67,7 +76,7 @@ class ReportsWindow:
         
         # Action buttons
         actions_frame = ttk.Frame(control_frame)
-        actions_frame.grid(row=2, column=0, columnspan=4, pady=10)
+        actions_frame.grid(row=3, column=0, columnspan=4, pady=10)
         
         ttk.Button(actions_frame, text="Generate Report", command=self.generate_sales_report).pack(side=tk.LEFT, padx=5)
         ttk.Button(actions_frame, text="Export to CSV", command=self.export_sales_csv).pack(side=tk.LEFT, padx=5)
@@ -402,15 +411,15 @@ class ReportsWindow:
     def generate_sales_report(self):
         """Generate sales report"""
         try:
-            from_date = datetime.strptime(self.from_date_var.get(), "%Y-%m-%d").date()
-            to_date = datetime.strptime(self.to_date_var.get(), "%Y-%m-%d").date()
-            
+            from_dt = datetime.strptime(f"{self.from_date_var.get()} {self.from_time_var.get()}", "%Y-%m-%d %H:%M")
+            to_dt = datetime.strptime(f"{self.to_date_var.get()} {self.to_time_var.get()}", "%Y-%m-%d %H:%M")
+
             session = db_manager.get_session()
             try:
-                # Query sales in date range
+                # Query sales in datetime range
                 sales = session.query(Sale).filter(
-                    Sale.created_at >= from_date,
-                    Sale.created_at <= to_date.replace(hour=23, minute=59, second=59) if hasattr(to_date, 'replace') else to_date
+                    Sale.created_at >= from_dt,
+                    Sale.created_at <= to_dt,
                 ).order_by(Sale.created_at.desc()).all()
                 
                 # Clear existing data

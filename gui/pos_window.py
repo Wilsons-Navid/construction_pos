@@ -5,6 +5,7 @@ from datetime import datetime
 from database.database import db_manager, DatabaseUtils
 from database.models import Product, Sale, SaleItem, Customer, StockMovement
 from utils.auth import get_current_user
+from sqlalchemy import func
 
 class POSWindow:
     def __init__(self, parent):
@@ -551,7 +552,19 @@ class POSWindow:
         customer_text = self.customer_var.get()
         if customer_text:
             customer_id = int(customer_text.split(' - ')[0])
-        
+
+        # Create default numbered customer if none selected
+        session = db_manager.get_session()
+        try:
+            if customer_id is None:
+                next_num = session.query(func.count(Customer.id)).scalar() + 1
+                customer = Customer(name=f"Customer {next_num}")
+                session.add(customer)
+                session.flush()
+                customer_id = customer.id
+        finally:
+            session.close()
+
         # Process sale in database
         session = db_manager.get_session()
         try:
