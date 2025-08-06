@@ -478,9 +478,8 @@ class InventoryWindow:
                 messagebox.showinfo("Success", "Product added successfully!")
                 # Clear any active search so the new product is visible
                 self.product_search_var.set('')
-                self.refresh_products()
+                self.load_data()
                 self.focus_product(product_id)
-                self.refresh_alerts()
                 self.notify_change()
             except Exception as e:
                 session.rollback()
@@ -514,9 +513,8 @@ class InventoryWindow:
                 messagebox.showinfo("Success", "Product updated successfully!")
                 # Reset search to ensure updated product is shown
                 self.product_search_var.set('')
-                self.refresh_products()
+                self.load_data()
                 self.focus_product(product_id)
-                self.refresh_alerts()
                 self.notify_change()
                 
         except Exception as e:
@@ -548,7 +546,7 @@ class InventoryWindow:
                 messagebox.showinfo("Success", "Product deactivated successfully!")
                 # Clear search so deactivated product disappears consistently
                 self.product_search_var.set('')
-                self.refresh_products()
+                self.load_data()
                 self.notify_change()
                 
         except Exception as e:
@@ -595,9 +593,8 @@ class InventoryWindow:
                     
                     session.commit()
                     messagebox.showinfo("Success", "Stock adjusted successfully!")
-                    self.refresh_products()
-                    self.refresh_movements()
-                    self.refresh_alerts()
+                    self.load_data()
+                    self.focus_product(product_id)
                     self.notify_change()
                     
             except Exception as e:
@@ -618,7 +615,7 @@ class InventoryWindow:
                 session.add(category)
                 session.commit()
                 messagebox.showinfo("Success", "Category added successfully!")
-                self.refresh_categories()
+                self.load_data()
             except Exception as e:
                 session.rollback()
                 messagebox.showerror("Error", f"Failed to add category: {e}")
@@ -649,7 +646,7 @@ class InventoryWindow:
 
                 session.commit()
                 messagebox.showinfo("Success", "Category updated successfully!")
-                self.refresh_categories()
+                self.load_data()
                 
         except Exception as e:
             session.rollback()
@@ -685,7 +682,7 @@ class InventoryWindow:
                 session.delete(category)
                 session.commit()
                 messagebox.showinfo("Success", "Category deleted successfully!")
-                self.refresh_categories()
+                self.load_data()
                 
         except Exception as e:
             session.rollback()
@@ -743,9 +740,8 @@ class InventoryWindow:
             messagebox.showinfo("Success", "Stock movement processed successfully!")
             # Clear search so stock updates are always visible
             self.product_search_var.set('')
-            self.refresh_products()
-            self.refresh_movements()
-            self.refresh_alerts()
+            self.load_data()
+            self.focus_product(product.id)
             self.notify_change()
             
         except Exception as e:
