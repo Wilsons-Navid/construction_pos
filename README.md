@@ -1,4 +1,4 @@
-# Construction Materials POS System
+# Quincaillerie Fexson POS System
 
 A complete offline Point of Sale system designed specifically for construction material shops (quincailleries). Built with Python and Tkinter for reliability and ease of use.
 

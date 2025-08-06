@@ -5,7 +5,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
-from database.database import DatabaseUtils
+from database.database import DatabaseUtils, get_app_dir
 from datetime import datetime
 import os
 
@@ -73,10 +73,10 @@ class ReceiptPrinter:
     def generate_receipt(self, sale):
         """Generate PDF receipt for a sale"""
         try:
-            # Create receipts directory if it doesn't exist
-            receipts_dir = "receipts"
+            # Create receipts directory inside the application folder
+            receipts_dir = os.path.join(get_app_dir(), "receipts")
             if not os.path.exists(receipts_dir):
-                os.makedirs(receipts_dir)
+                os.makedirs(receipts_dir, exist_ok=True)
             
             # Generate filename
             filename = f"receipt_{sale.sale_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -96,7 +96,7 @@ class ReceiptPrinter:
             story = []
             
             # Shop header
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             shop_address = DatabaseUtils.get_setting_value('shop_address', '123 Main Street')
             shop_phone = DatabaseUtils.get_setting_value('shop_phone', '+1234567890')
             
@@ -204,17 +204,17 @@ class ReceiptPrinter:
     def generate_simple_receipt(self, sale):
         """Generate a simple text receipt for thermal printers"""
         try:
-            # Create receipts directory if it doesn't exist
-            receipts_dir = "receipts"
+            # Create receipts directory inside the application folder
+            receipts_dir = os.path.join(get_app_dir(), "receipts")
             if not os.path.exists(receipts_dir):
-                os.makedirs(receipts_dir)
+                os.makedirs(receipts_dir, exist_ok=True)
             
             # Generate filename
             filename = f"receipt_{sale.sale_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
             filepath = os.path.join(receipts_dir, filename)
             
             # Get settings
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             shop_address = DatabaseUtils.get_setting_value('shop_address', '123 Main Street')
             shop_phone = DatabaseUtils.get_setting_value('shop_phone', '+1234567890')
             currency = DatabaseUtils.get_setting_value('currency', 'FCFA')
@@ -340,7 +340,7 @@ class ReceiptPrinter:
             Date: {datetime.now().strftime('%Y-%m-%d')}
             
             Best regards,
-            {DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')}
+            {DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')}
             """
             
             msg.attach(MIMEText(body, 'plain'))
@@ -409,7 +409,7 @@ class ReceiptPrinter:
             story = []
             
             # Report header
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             story.append(Paragraph(shop_name, self.styles['ShopName']))
             story.append(Paragraph(f"Daily Sales Report - {date.strftime('%Y-%m-%d')}", self.styles['ReceiptHeader']))
             story.append(Spacer(1, 12))
