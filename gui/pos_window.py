@@ -729,6 +729,7 @@ class POSWindow:
         self.refresh_products()
         self.update_dashboard()
 
+
     def destroy(self):
         if self.dashboard_job:
             try:
@@ -741,3 +742,4 @@ class POSWindow:
                 self.parent.unbind('<<InventoryChanged>>', self.inventory_binding)
             except Exception:
                 pass
+
