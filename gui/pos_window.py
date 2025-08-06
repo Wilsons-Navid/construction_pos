@@ -695,8 +695,8 @@ class POSWindow:
         try:
             from utils.receipt_printer import ReceiptPrinter
             printer = ReceiptPrinter()
-            printer.generate_receipt(sale)
-            messagebox.showinfo("Receipt", "Receipt generated successfully!")
+            receipt_path = printer.generate_receipt(sale)
+            messagebox.showinfo("Receipt", f"Receipt saved to:\n{receipt_path}")
         except Exception as e:
             messagebox.showerror("Print Error", f"Failed to print receipt: {e}")
     

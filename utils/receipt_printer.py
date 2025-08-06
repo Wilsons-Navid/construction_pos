@@ -5,7 +5,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
-from database.database import DatabaseUtils
+from database.database import DatabaseUtils, get_app_dir
 from datetime import datetime
 import os
 
@@ -73,10 +73,10 @@ class ReceiptPrinter:
     def generate_receipt(self, sale):
         """Generate PDF receipt for a sale"""
         try:
-            # Create receipts directory if it doesn't exist
-            receipts_dir = "receipts"
+            # Create receipts directory inside the application folder
+            receipts_dir = os.path.join(get_app_dir(), "receipts")
             if not os.path.exists(receipts_dir):
-                os.makedirs(receipts_dir)
+                os.makedirs(receipts_dir, exist_ok=True)
             
             # Generate filename
             filename = f"receipt_{sale.sale_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -204,10 +204,10 @@ class ReceiptPrinter:
     def generate_simple_receipt(self, sale):
         """Generate a simple text receipt for thermal printers"""
         try:
-            # Create receipts directory if it doesn't exist
-            receipts_dir = "receipts"
+            # Create receipts directory inside the application folder
+            receipts_dir = os.path.join(get_app_dir(), "receipts")
             if not os.path.exists(receipts_dir):
-                os.makedirs(receipts_dir)
+                os.makedirs(receipts_dir, exist_ok=True)
             
             # Generate filename
             filename = f"receipt_{sale.sale_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
