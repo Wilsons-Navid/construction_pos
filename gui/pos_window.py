@@ -1,10 +1,11 @@
 # gui/pos_window.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, TclError
 from datetime import datetime
 from database.database import db_manager, DatabaseUtils
 from database.models import Product, Sale, SaleItem, Customer, StockMovement
 from utils.auth import get_current_user
+from utils.i18n import translate as _
 from sqlalchemy import func
 
 class POSWindow:
@@ -17,8 +18,9 @@ class POSWindow:
         self.setup_ui()
         self.load_products()
         self.load_customers()
+        self.inventory_binding = self.parent.bind('<<InventoryChanged>>', self.on_inventory_changed)
+        self.dashboard_job = None
         self.update_dashboard()
-        self.parent.bind('<<InventoryChanged>>', self.on_inventory_changed)
         
     def setup_ui(self):
         """Setup POS user interface"""
@@ -110,13 +112,17 @@ class POSWindow:
         dashboard_frame = ttk.LabelFrame(self.left_panel, text="Dashboard", padding="5")
         dashboard_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
 
-        ttk.Label(dashboard_frame, text="Total Sales:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(dashboard_frame, text=_("total_sales")).grid(row=0, column=0, sticky=tk.W)
         self.total_sales_var = tk.StringVar(value="0")
         ttk.Label(dashboard_frame, textvariable=self.total_sales_var).grid(row=0, column=1, sticky=tk.W)
 
-        ttk.Label(dashboard_frame, text="Low Stock Items:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(dashboard_frame, text=_("revenue")).grid(row=1, column=0, sticky=tk.W)
+        self.revenue_var = tk.StringVar(value="0")
+        ttk.Label(dashboard_frame, textvariable=self.revenue_var).grid(row=1, column=1, sticky=tk.W)
+
+        ttk.Label(dashboard_frame, text=_("low_stock")).grid(row=2, column=0, sticky=tk.W)
         self.low_stock_var = tk.StringVar(value="0")
-        ttk.Label(dashboard_frame, textvariable=self.low_stock_var).grid(row=1, column=1, sticky=tk.W)
+        ttk.Label(dashboard_frame, textvariable=self.low_stock_var).grid(row=2, column=1, sticky=tk.W)
     
     def setup_right_panel(self):
         """Setup right panel with cart and checkout"""
@@ -125,9 +131,9 @@ class POSWindow:
         customer_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         customer_frame.columnconfigure(1, weight=1)
         
-        ttk.Label(customer_frame, text="Customer:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(customer_frame, text=f"{ _('customer') }:").grid(row=0, column=0, sticky=tk.W)
         self.customer_var = tk.StringVar()
-        self.customer_combo = ttk.Combobox(customer_frame, textvariable=self.customer_var, state="readonly")
+        self.customer_combo = ttk.Combobox(customer_frame, textvariable=self.customer_var, state="normal")
         self.customer_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(5, 0))
         
         # Shopping cart
@@ -171,14 +177,19 @@ class POSWindow:
         ttk.Label(totals_frame, text="Subtotal:").grid(row=0, column=0, sticky=tk.W)
         self.subtotal_label = ttk.Label(totals_frame, text="0.00", font=('Arial', 12, 'bold'))
         self.subtotal_label.grid(row=0, column=1, sticky=tk.E)
-        
-        ttk.Label(totals_frame, text="Tax:").grid(row=1, column=0, sticky=tk.W)
+
+        ttk.Label(totals_frame, text=f"{ _('tax_rate') }:").grid(row=1, column=0, sticky=tk.W)
+        self.tax_rate_var = tk.StringVar(value=DatabaseUtils.get_setting_value('tax_rate', '0'))
+        ttk.Entry(totals_frame, textvariable=self.tax_rate_var, width=10).grid(row=1, column=1, sticky=tk.E)
+        self.tax_rate_var.trace('w', lambda *args: self.calculate_totals())
+
+        ttk.Label(totals_frame, text=f"{ _('tax_amount') }:").grid(row=2, column=0, sticky=tk.W)
         self.tax_label = ttk.Label(totals_frame, text="0.00")
-        self.tax_label.grid(row=1, column=1, sticky=tk.E)
-        
-        ttk.Label(totals_frame, text="Total:").grid(row=2, column=0, sticky=tk.W)
+        self.tax_label.grid(row=2, column=1, sticky=tk.E)
+
+        ttk.Label(totals_frame, text=f"{ _('total') }:").grid(row=3, column=0, sticky=tk.W)
         self.total_label = ttk.Label(totals_frame, text="0.00", font=('Arial', 14, 'bold'))
-        self.total_label.grid(row=2, column=1, sticky=tk.E)
+        self.total_label.grid(row=3, column=1, sticky=tk.E)
         
         # Payment section
         payment_frame = ttk.LabelFrame(self.right_panel, text="Payment", padding="10")
@@ -222,16 +233,19 @@ class POSWindow:
         session = db_manager.get_session()
         try:
             from database.models import Category
-            
+
             # Load categories for filter
             categories = session.query(Category).all()
             category_names = ["All Categories"] + [cat.name for cat in categories]
-            self.category_combo['values'] = category_names
-            self.category_combo.set("All Categories")
-            
+            try:
+                self.category_combo['values'] = category_names
+                self.category_combo.set("All Categories")
+            except TclError:
+                return
+
             # Load products
             self.refresh_products()
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load products: {e}")
         finally:
@@ -304,21 +318,24 @@ class POSWindow:
         session = db_manager.get_session()
         try:
             total_sales = session.query(func.count(Sale.id)).scalar() or 0
+            revenue = session.query(func.sum(Sale.total_amount)).scalar() or 0
             low_stock = session.query(func.count(Product.id)).filter(
                 Product.is_active == True,
                 Product.stock_quantity <= Product.min_stock_level
             ).scalar() or 0
 
+            currency = DatabaseUtils.get_setting_value('currency', 'FCFA')
             self.total_sales_var.set(str(total_sales))
+            self.revenue_var.set(f"{revenue:,.0f} {currency}")
             self.low_stock_var.set(str(low_stock))
         finally:
             session.close()
 
         # Schedule periodic refresh
         try:
-            self.parent.after(60000, self.update_dashboard)
+            self.dashboard_job = self.parent.after(60000, self.update_dashboard)
         except Exception:
-            pass
+            self.dashboard_job = None
 
     def on_inventory_changed(self, event=None):
         """Handle inventory updates from other windows"""
@@ -464,8 +481,8 @@ class POSWindow:
         """Calculate and display totals"""
         subtotal = sum(item['total'] for item in self.cart_items)
         
-        # Get tax rate from settings
-        tax_rate = float(DatabaseUtils.get_setting_value('tax_rate', '0'))
+        # Get tax rate from user input
+        tax_rate = float(self.tax_rate_var.get() or 0)
         tax_amount = subtotal * (tax_rate / 100)
         total = subtotal + tax_amount
         
@@ -485,7 +502,7 @@ class POSWindow:
         """Calculate change amount"""
         try:
             total = sum(item['total'] for item in self.cart_items)
-            tax_rate = float(DatabaseUtils.get_setting_value('tax_rate', '0'))
+            tax_rate = float(self.tax_rate_var.get() or 0)
             total_with_tax = total * (1 + tax_rate / 100)
             
             paid = float(self.paid_var.get() or 0)
@@ -573,35 +590,38 @@ class POSWindow:
         # Validate payment
         try:
             total = sum(item['total'] for item in self.cart_items)
-            tax_rate = float(DatabaseUtils.get_setting_value('tax_rate', '0'))
+            tax_rate = float(self.tax_rate_var.get() or 0)
             tax_amount = total * (tax_rate / 100)
             total_with_tax = total + tax_amount
-            
+
             paid = float(self.paid_var.get() or 0)
-            
+
             if self.payment_var.get() == "cash" and paid < total_with_tax:
                 messagebox.showwarning("Insufficient Payment", "Payment amount is less than total.")
                 return
-                
+
         except ValueError:
             messagebox.showwarning("Invalid Payment", "Please enter a valid payment amount.")
             return
-        
-        # Get customer
-        customer_id = None
-        customer_text = self.customer_var.get()
-        if customer_text:
-            customer_id = int(customer_text.split(' - ')[0])
 
-        # Create default numbered customer if none selected
+        # Determine customer (existing or new)
+        customer_text = self.customer_var.get().strip()
         session = db_manager.get_session()
         try:
-            if customer_id is None:
-                next_num = session.query(func.count(Customer.id)).scalar() + 1
-                customer = Customer(name=f"Customer {next_num}")
+            if customer_text and ' - ' in customer_text and customer_text.split(' - ')[0].isdigit():
+                customer_id = int(customer_text.split(' - ')[0])
+            else:
+                if not customer_text:
+                    next_num = session.query(func.count(Customer.id)).scalar() + 1
+                    customer_text = f"Customer {next_num}"
+                customer = Customer(name=customer_text)
                 session.add(customer)
-                session.flush()
+                session.commit()
                 customer_id = customer.id
+        except Exception as e:
+            session.rollback()
+            messagebox.showerror("Customer Error", f"Failed to save customer: {e}")
+            return
         finally:
             session.close()
 
@@ -679,8 +699,8 @@ class POSWindow:
         try:
             from utils.receipt_printer import ReceiptPrinter
             printer = ReceiptPrinter()
-            printer.generate_receipt(sale)
-            messagebox.showinfo("Receipt", "Receipt generated successfully!")
+            receipt_path = printer.generate_receipt(sale)
+            messagebox.showinfo("Receipt", f"Receipt saved to:\n{receipt_path}")
         except Exception as e:
             messagebox.showerror("Print Error", f"Failed to print receipt: {e}")
     
@@ -701,11 +721,23 @@ class POSWindow:
         self.paid_var.set("")
         self.search_var.set("")
 
-        # Reset to default customer
-        if self.customer_combo['values']:
-            self.customer_combo.set(self.customer_combo['values'][0])
+        # Reload customers to include new entries and reset selection
+        self.load_customers()
 
         # Focus search box and refresh product list
         self.search_var.set("")
         self.refresh_products()
         self.update_dashboard()
+
+    def destroy(self):
+        if self.dashboard_job:
+            try:
+                self.parent.after_cancel(self.dashboard_job)
+            except Exception:
+                pass
+            self.dashboard_job = None
+        if self.inventory_binding:
+            try:
+                self.parent.unbind('<<InventoryChanged>>', self.inventory_binding)
+            except Exception:
+                pass

@@ -467,6 +467,7 @@ class InventoryWindow:
     def add_product(self):
         """Add new product"""
         dialog = ProductDialog(self.parent, "Add Product")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             session = db_manager.get_session()
             try:
@@ -477,9 +478,8 @@ class InventoryWindow:
                 messagebox.showinfo("Success", "Product added successfully!")
                 # Clear any active search so the new product is visible
                 self.product_search_var.set('')
-                self.refresh_products()
+                self.load_data()
                 self.focus_product(product_id)
-                self.refresh_alerts()
                 self.notify_change()
             except Exception as e:
                 session.rollback()
@@ -502,8 +502,9 @@ class InventoryWindow:
             if not product:
                 messagebox.showerror("Error", "Product not found.")
                 return
-            
+
             dialog = ProductDialog(self.parent, "Edit Product", product)
+            self.parent.wait_window(dialog.dialog)
             if dialog.result:
                 for key, value in dialog.result.items():
                     setattr(product, key, value)
@@ -512,9 +513,8 @@ class InventoryWindow:
                 messagebox.showinfo("Success", "Product updated successfully!")
                 # Reset search to ensure updated product is shown
                 self.product_search_var.set('')
-                self.refresh_products()
+                self.load_data()
                 self.focus_product(product_id)
-                self.refresh_alerts()
                 self.notify_change()
                 
         except Exception as e:
@@ -546,7 +546,7 @@ class InventoryWindow:
                 messagebox.showinfo("Success", "Product deactivated successfully!")
                 # Clear search so deactivated product disappears consistently
                 self.product_search_var.set('')
-                self.refresh_products()
+                self.load_data()
                 self.notify_change()
                 
         except Exception as e:
@@ -565,8 +565,9 @@ class InventoryWindow:
         product_id = self.products_tree.item(selection[0])['values'][0]
         product_name = self.products_tree.item(selection[0])['values'][1]
         current_stock = int(self.products_tree.item(selection[0])['values'][7])
-        
+
         dialog = StockAdjustmentDialog(self.parent, product_name, current_stock)
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             session = db_manager.get_session()
             try:
@@ -592,9 +593,8 @@ class InventoryWindow:
                     
                     session.commit()
                     messagebox.showinfo("Success", "Stock adjusted successfully!")
-                    self.refresh_products()
-                    self.refresh_movements()
-                    self.refresh_alerts()
+                    self.load_data()
+                    self.focus_product(product_id)
                     self.notify_change()
                     
             except Exception as e:
@@ -607,6 +607,7 @@ class InventoryWindow:
     def add_category(self):
         """Add new category"""
         dialog = CategoryDialog(self.parent, "Add Category")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             session = db_manager.get_session()
             try:
@@ -614,7 +615,7 @@ class InventoryWindow:
                 session.add(category)
                 session.commit()
                 messagebox.showinfo("Success", "Category added successfully!")
-                self.refresh_categories()
+                self.load_data()
             except Exception as e:
                 session.rollback()
                 messagebox.showerror("Error", f"Failed to add category: {e}")
@@ -636,15 +637,16 @@ class InventoryWindow:
             if not category:
                 messagebox.showerror("Error", "Category not found.")
                 return
-            
+
             dialog = CategoryDialog(self.parent, "Edit Category", category)
+            self.parent.wait_window(dialog.dialog)
             if dialog.result:
                 for key, value in dialog.result.items():
                     setattr(category, key, value)
-                
+
                 session.commit()
                 messagebox.showinfo("Success", "Category updated successfully!")
-                self.refresh_categories()
+                self.load_data()
                 
         except Exception as e:
             session.rollback()
@@ -680,7 +682,7 @@ class InventoryWindow:
                 session.delete(category)
                 session.commit()
                 messagebox.showinfo("Success", "Category deleted successfully!")
-                self.refresh_categories()
+                self.load_data()
                 
         except Exception as e:
             session.rollback()
@@ -692,12 +694,14 @@ class InventoryWindow:
     def add_stock(self):
         """Add stock to a product"""
         dialog = StockMovementDialog(self.parent, "Add Stock", "in")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             self.process_stock_movement(dialog.result)
-    
+
     def remove_stock(self):
         """Remove stock from a product"""
         dialog = StockMovementDialog(self.parent, "Remove Stock", "out")
+        self.parent.wait_window(dialog.dialog)
         if dialog.result:
             self.process_stock_movement(dialog.result)
     
@@ -736,9 +740,8 @@ class InventoryWindow:
             messagebox.showinfo("Success", "Stock movement processed successfully!")
             # Clear search so stock updates are always visible
             self.product_search_var.set('')
-            self.refresh_products()
-            self.refresh_movements()
-            self.refresh_alerts()
+            self.load_data()
+            self.focus_product(product.id)
             self.notify_change()
             
         except Exception as e:
