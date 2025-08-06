@@ -96,7 +96,7 @@ class ReceiptPrinter:
             story = []
             
             # Shop header
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             shop_address = DatabaseUtils.get_setting_value('shop_address', '123 Main Street')
             shop_phone = DatabaseUtils.get_setting_value('shop_phone', '+1234567890')
             
@@ -214,7 +214,7 @@ class ReceiptPrinter:
             filepath = os.path.join(receipts_dir, filename)
             
             # Get settings
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             shop_address = DatabaseUtils.get_setting_value('shop_address', '123 Main Street')
             shop_phone = DatabaseUtils.get_setting_value('shop_phone', '+1234567890')
             currency = DatabaseUtils.get_setting_value('currency', 'FCFA')
@@ -340,7 +340,7 @@ class ReceiptPrinter:
             Date: {datetime.now().strftime('%Y-%m-%d')}
             
             Best regards,
-            {DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')}
+            {DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')}
             """
             
             msg.attach(MIMEText(body, 'plain'))
@@ -409,7 +409,7 @@ class ReceiptPrinter:
             story = []
             
             # Report header
-            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Construction Materials Shop')
+            shop_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
             story.append(Paragraph(shop_name, self.styles['ShopName']))
             story.append(Paragraph(f"Daily Sales Report - {date.strftime('%Y-%m-%d')}", self.styles['ReceiptHeader']))
             story.append(Spacer(1, 12))

@@ -319,7 +319,8 @@ except ImportError:
 class ConstructionPOSApp:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("Construction Materials POS System")
+        app_name = DatabaseUtils.get_setting_value('shop_name', 'Quincaillerie Fexson')
+        self.root.title(app_name)
         self.root.geometry("1200x800")
         
         # Try to maximize window
@@ -361,28 +362,39 @@ class ConstructionPOSApp:
     def setup_modern_theme(self):
         """Setup modern professional theme"""
         style = ttk.Style()
-        
-        # Use a modern theme as base
+        theme_setting = DatabaseUtils.get_setting_value('theme', 'light')
         try:
-            style.theme_use('clam')
-        except:
-            try:
-                style.theme_use('vista')
-            except:
-                style.theme_use('default')
-        
-        # Define modern color palette
-        colors = {
-            'primary': '#2c3e50',      # Dark blue-gray
-            'secondary': '#3498db',     # Blue
-            'success': '#27ae60',       # Green
-            'warning': '#f39c12',       # Orange
-            'danger': '#e74c3c',        # Red
-            'light': '#ecf0f1',         # Light gray
-            'dark': '#34495e',          # Dark gray
-            'white': '#ffffff',
-            'accent': '#9b59b6'         # Purple
-        }
+            style.theme_use('alt' if theme_setting == 'dark' else 'clam')
+        except Exception:
+            style.theme_use('default')
+
+        # Define color palette based on theme
+        if theme_setting == 'dark':
+            colors = {
+                'primary': '#ecf0f1',
+                'secondary': '#3498db',
+                'success': '#27ae60',
+                'warning': '#f39c12',
+                'danger': '#e74c3c',
+                'light': '#2c3e50',
+                'dark': '#ecf0f1',
+                'white': '#34495e',
+                'accent': '#9b59b6'
+            }
+            self.root.configure(background='#2c3e50')
+        else:
+            colors = {
+                'primary': '#2c3e50',
+                'secondary': '#3498db',
+                'success': '#27ae60',
+                'warning': '#f39c12',
+                'danger': '#e74c3c',
+                'light': '#ecf0f1',
+                'dark': '#34495e',
+                'white': '#ffffff',
+                'accent': '#9b59b6'
+            }
+            self.root.configure(background='white')
         
         # Configure modern styles
         
