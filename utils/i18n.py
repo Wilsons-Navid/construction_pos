@@ -19,13 +19,17 @@ TRANSLATIONS = {
         'add_user': 'Add User',
         'save_preferences': 'Save Preferences',
         'user_added': 'User added successfully',
+
         'username_exists': 'Username exists',
         'credentials_required': 'Username & Password required',
         'preferences_saved': 'Preferences saved',
+
+
         'pos': 'Point of Sale',
         'inventory': 'Inventory',
         'reports': 'Reports',
         'customers': 'Customers',
+
         'navigation': 'Navigation',
         'ready': 'Ready',
         'product_search': 'Product Search',
@@ -106,6 +110,7 @@ TRANSLATIONS = {
         'add_stock': 'Add Stock',
         'remove_stock': 'Remove Stock',
         'sale_number': 'Sale #',
+
     },
     'fr': {
         'customer': 'Client',
@@ -125,13 +130,16 @@ TRANSLATIONS = {
         'add_user': 'Ajouter',
         'save_preferences': 'Enregistrer',
         'user_added': 'Utilisateur ajouté',
+
         'username_exists': "Nom d'utilisateur existe",
         'credentials_required': "Nom d'utilisateur et mot de passe requis",
         'preferences_saved': 'Préférences enregistrées',
+
         'pos': 'Point de Vente',
         'inventory': 'Inventaire',
         'reports': 'Rapports',
         'customers': 'Clients',
+
         'navigation': 'Navigation',
         'ready': 'Prêt',
         'product_search': 'Recherche Produit',
@@ -212,6 +220,7 @@ TRANSLATIONS = {
         'add_stock': 'Ajouter du stock',
         'remove_stock': 'Retirer du stock',
         'sale_number': 'Vente n°',
+
     },
 }
 

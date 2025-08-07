@@ -103,6 +103,7 @@ class MainWindow:
         self.current_window = SettingsWindow(self.content_frame, self.root)
         self.update_status(_("settings"))
 
+
     def reload_language(self, event=None):
         """Rebuild UI when language preference changes."""
         try:
@@ -117,3 +118,4 @@ class MainWindow:
         self.main_frame.rowconfigure(1, weight=1)
         self.setup_ui()
         self.show_pos()
+

@@ -6,7 +6,9 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from database.database import DatabaseUtils, get_app_dir
+
 from utils.i18n import translate as _
+
 from datetime import datetime
 import os
 

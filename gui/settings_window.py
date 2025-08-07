@@ -54,12 +54,20 @@ class SettingsWindow:
         username = self.username_var.get().strip()
         password = self.password_var.get()
         if not username or not password:
+
             messagebox.showerror(_('settings'), _('credentials_required'))
+
+            messagebox.showerror(_('settings'), _('username') + ' & ' + _('password') + ' required')
+
             return
         session = db_manager.get_session()
         try:
             if session.query(User).filter(User.username == username).first():
+
                 messagebox.showerror(_('settings'), _('username_exists'))
+
+                messagebox.showerror(_('settings'), 'Username exists')
+
                 return
             user = User(username=username, password_hash=hash_password(password))
             session.add(user)
@@ -73,8 +81,13 @@ class SettingsWindow:
     def save_preferences(self):
         DatabaseUtils.update_setting('language', self.lang_var.get())
         DatabaseUtils.update_setting('theme', self.theme_var.get())
+
         messagebox.showinfo(_('settings'), _('preferences_saved'))
         # Notify root to reapply theme and language if possible
+
+        messagebox.showinfo(_('settings'), _('save_preferences'))
+        # Notify root to reapply theme if possible
+
         try:
             from .main_window import MainWindow  # avoid circular if possible
             style = ttk.Style()
@@ -86,7 +99,10 @@ class SettingsWindow:
                 self.root.configure(background='white')
         except Exception:
             pass
+
         try:
             self.root.event_generate('<<LanguageChanged>>', when='tail')
         except Exception:
             messagebox.showinfo(_('settings'), _('language_changed'))
+
+

@@ -189,7 +189,11 @@ class POSWindow:
         self.tax_label = ttk.Label(totals_frame, text="0.00")
         self.tax_label.grid(row=2, column=1, sticky=tk.E)
 
+
         ttk.Label(totals_frame, text=f"{ _('total_label') }").grid(row=3, column=0, sticky=tk.W)
+
+        ttk.Label(totals_frame, text=f"{ _('total') }:").grid(row=3, column=0, sticky=tk.W)
+
         self.total_label = ttk.Label(totals_frame, text="0.00", font=('Arial', 14, 'bold'))
         self.total_label.grid(row=3, column=1, sticky=tk.E)
         
@@ -731,6 +735,7 @@ class POSWindow:
         self.refresh_products()
         self.update_dashboard()
 
+
     def destroy(self):
         if self.dashboard_job:
             try:
@@ -743,3 +748,4 @@ class POSWindow:
                 self.parent.unbind('<<InventoryChanged>>', self.inventory_binding)
             except Exception:
                 pass
+
