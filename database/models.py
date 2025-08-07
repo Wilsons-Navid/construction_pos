@@ -131,6 +131,19 @@ class StockMovement(Base):
     product = relationship("Product", back_populates="stock_movements")
 
 
+class ProductHistory(Base):
+    """Record of product additions and deletions"""
+
+    __tablename__ = "product_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer)
+    name = Column(String(200), nullable=False)
+    action = Column(String(20))  # added, deleted, restored
+    data = Column(Text)
+    created_at = Column(DateTime, default=datetime.now)
+
+
 class Setting(Base):
     __tablename__ = "settings"
 
