@@ -65,21 +65,21 @@ class InventoryWindow:
         
         columns = ('ID', 'Name', 'Category', 'Barcode', 'Unit', 'Cost', 'Price', 'Stock', 'Min Stock', 'Status')
         self.products_tree = ttk.Treeview(products_tree_frame, columns=columns, show='headings', height=20)
-        
+
         # Define headings and columns
         headings = {
-            'ID': ('ID', 50, 'center'),
-            'Name': ('Product Name', 200, 'w'),
-            'Category': ('Category', 120, 'center'),
-            'Barcode': ('Barcode', 100, 'center'),
-            'Unit': ('Unit', 60, 'center'),
-            'Cost': ('Cost Price', 100, 'e'),
-            'Price': ('Selling Price', 100, 'e'),
-            'Stock': ('Stock', 80, 'center'),
-            'Min Stock': ('Min Stock', 80, 'center'),
-            'Status': ('Status', 80, 'center')
+            'ID': (_('id'), 50, 'center'),
+            'Name': (_('product_name'), 200, 'w'),
+            'Category': (_('category'), 120, 'center'),
+            'Barcode': (_('barcode'), 100, 'center'),
+            'Unit': (_('unit'), 60, 'center'),
+            'Cost': (_('cost_price'), 100, 'e'),
+            'Price': (_('selling_price'), 100, 'e'),
+            'Stock': (_('stock'), 80, 'center'),
+            'Min Stock': (_('min_stock'), 80, 'center'),
+            'Status': (_('status'), 80, 'center')
         }
-        
+
         for col, (text, width, anchor) in headings.items():
             self.products_tree.heading(col, text=text)
             self.products_tree.column(col, width=width, anchor=anchor)
@@ -115,16 +115,16 @@ class InventoryWindow:
         
         cat_columns = ('ID', 'Name', 'Description', 'Product Count', 'Created')
         self.categories_tree = ttk.Treeview(categories_tree_frame, columns=cat_columns, show='headings')
-        
+
         # Define category headings
         cat_headings = {
-            'ID': ('ID', 50, 'center'),
-            'Name': ('Category Name', 200, 'w'),
-            'Description': ('Description', 300, 'w'),
-            'Product Count': ('Products', 100, 'center'),
-            'Created': ('Created Date', 150, 'center')
+            'ID': (_('id'), 50, 'center'),
+            'Name': (_('category_name'), 200, 'w'),
+            'Description': (_('description'), 300, 'w'),
+            'Product Count': (_('product_count'), 100, 'center'),
+            'Created': (_('created_date'), 150, 'center')
         }
-        
+
         for col, (text, width, anchor) in cat_headings.items():
             self.categories_tree.heading(col, text=text)
             self.categories_tree.column(col, width=width, anchor=anchor)
@@ -167,19 +167,19 @@ class InventoryWindow:
         
         mov_columns = ('ID', 'Product', 'Type', 'Quantity', 'Reference', 'Notes', 'Date', 'User')
         self.movements_tree = ttk.Treeview(movements_tree_frame, columns=mov_columns, show='headings')
-        
+
         # Define movement headings
         mov_headings = {
-            'ID': ('ID', 50, 'center'),
-            'Product': ('Product', 200, 'w'),
-            'Type': ('Type', 80, 'center'),
-            'Quantity': ('Quantity', 100, 'center'),
-            'Reference': ('Reference', 120, 'center'),
-            'Notes': ('Notes', 200, 'w'),
-            'Date': ('Date', 150, 'center'),
-            'User': ('User', 100, 'center')
+            'ID': (_('id'), 50, 'center'),
+            'Product': (_('product_label'), 200, 'w'),
+            'Type': (_('type'), 80, 'center'),
+            'Quantity': (_('quantity'), 100, 'center'),
+            'Reference': (_('reference'), 120, 'center'),
+            'Notes': (_('notes'), 200, 'w'),
+            'Date': (_('date_header'), 150, 'center'),
+            'User': (_('user'), 100, 'center')
         }
-        
+
         for col, (text, width, anchor) in mov_headings.items():
             self.movements_tree.heading(col, text=text)
             self.movements_tree.column(col, width=width, anchor=anchor)
@@ -219,15 +219,15 @@ class InventoryWindow:
         
         # Define alert headings
         alert_headings = {
-            'ID': ('ID', 50, 'center'),
-            'Product': ('Product Name', 250, 'w'),
-            'Category': ('Category', 120, 'center'),
-            'Current Stock': ('Current Stock', 100, 'center'),
-            'Min Stock': ('Min Stock', 100, 'center'),
-            'Shortage': ('Shortage', 100, 'center'),
-            'Status': ('Status', 100, 'center')
+            'ID': (_('id'), 50, 'center'),
+            'Product': (_('product_name'), 250, 'w'),
+            'Category': (_('category'), 120, 'center'),
+            'Current Stock': (_('current_stock'), 100, 'center'),
+            'Min Stock': (_('min_stock'), 100, 'center'),
+            'Shortage': (_('shortage'), 100, 'center'),
+            'Status': (_('status'), 100, 'center')
         }
-        
+
         for col, (text, width, anchor) in alert_headings.items():
             self.alerts_tree.heading(col, text=text)
             self.alerts_tree.column(col, width=width, anchor=anchor)

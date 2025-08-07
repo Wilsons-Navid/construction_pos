@@ -31,7 +31,15 @@ class SettingsWindow:
         ttk.Entry(user_frame, textvariable=self.password_var, show='*').grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
 
         ttk.Button(user_frame, text=_('add_user'), command=self.add_user).grid(row=2, column=0, columnspan=2, pady=10, sticky=(tk.W, tk.E))
+
+        self.users_tree = ttk.Treeview(user_frame, columns=('id', 'username'), show='headings', height=5)
+        self.users_tree.heading('id', text=_('id'))
+        self.users_tree.heading('username', text=_('username'))
+        self.users_tree.column('id', width=50, anchor='center')
+        self.users_tree.column('username', width=150, anchor='w')
+        self.users_tree.grid(row=3, column=0, columnspan=2, pady=10, sticky=(tk.W, tk.E))
         user_frame.columnconfigure(1, weight=1)
+        self.load_users()
 
         # Preferences tab
         pref_frame = ttk.Frame(notebook, padding=10)
@@ -54,27 +62,31 @@ class SettingsWindow:
         username = self.username_var.get().strip()
         password = self.password_var.get()
         if not username or not password:
-
             messagebox.showerror(_('settings'), _('credentials_required'))
-
-            messagebox.showerror(_('settings'), _('username') + ' & ' + _('password') + ' required')
-
             return
         session = db_manager.get_session()
         try:
             if session.query(User).filter(User.username == username).first():
-
                 messagebox.showerror(_('settings'), _('username_exists'))
-
-                messagebox.showerror(_('settings'), 'Username exists')
-
                 return
             user = User(username=username, password_hash=hash_password(password))
             session.add(user)
             session.commit()
-            messagebox.showinfo(_('settings'), _( 'user_added'))
+            messagebox.showinfo(_('settings'), _('user_added'))
             self.username_var.set('')
             self.password_var.set('')
+            self.load_users()
+        finally:
+            session.close()
+
+    def load_users(self):
+        session = db_manager.get_session()
+        try:
+            for item in self.users_tree.get_children():
+                self.users_tree.delete(item)
+            users = session.query(User).all()
+            for user in users:
+                self.users_tree.insert('', tk.END, values=(user.id, user.username))
         finally:
             session.close()
 
@@ -84,9 +96,6 @@ class SettingsWindow:
 
         messagebox.showinfo(_('settings'), _('preferences_saved'))
         # Notify root to reapply theme and language if possible
-
-        messagebox.showinfo(_('settings'), _('save_preferences'))
-        # Notify root to reapply theme if possible
 
         try:
             from .main_window import MainWindow  # avoid circular if possible
