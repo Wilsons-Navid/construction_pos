@@ -10,6 +10,7 @@ from utils.i18n import translate as _
 class InventoryWindow:
     def __init__(self, parent):
         self.parent = parent
+        self.last_deleted_history = None
         self.setup_ui()
         self.load_data()
     
@@ -259,7 +260,7 @@ class InventoryWindow:
         control_frame.columnconfigure(2, weight=1)
 
         ttk.Button(control_frame, text=_('delete_entry'), command=self.delete_history_entry).grid(row=0, column=0, padx=2)
-        ttk.Button(control_frame, text=_('restore_product'), command=self.restore_product).grid(row=0, column=1, padx=2)
+        ttk.Button(control_frame, text=_('restore_history'), command=self.restore_history_entry).grid(row=0, column=1, padx=2)
         ttk.Button(control_frame, text=_('refresh'), command=self.refresh_history).grid(row=0, column=2, padx=2)
 
         history_tree_frame = ttk.Frame(self.history_frame)
@@ -522,6 +523,13 @@ class InventoryWindow:
         try:
             record = session.query(ProductHistory).get(history_id)
             if record:
+                self.last_deleted_history = {
+                    'product_id': record.product_id,
+                    'name': record.name,
+                    'action': record.action,
+                    'data': record.data,
+                    'created_at': record.created_at,
+                }
                 session.delete(record)
                 session.commit()
                 messagebox.showinfo("Success", "History entry deleted")
@@ -532,39 +540,23 @@ class InventoryWindow:
         finally:
             session.close()
 
-    def restore_product(self):
-        """Restore product from history"""
-        selection = self.history_tree.selection()
-        if not selection:
-            messagebox.showwarning(_("no_selection"), _("no_selection"))
+    def restore_history_entry(self):
+        """Restore the most recently deleted history record"""
+        if not self.last_deleted_history:
+            messagebox.showinfo("Info", "No history entry to restore")
             return
-
-        history_id = self.history_tree.item(selection[0])['values'][0]
 
         session = db_manager.get_session()
         try:
-            record = session.query(ProductHistory).get(history_id)
-            if not record or record.action != 'deleted':
-                messagebox.showwarning("Invalid", "Selected record cannot be restored")
-                return
-
-            data = json.loads(record.data) if record.data else {}
-
-            if session.query(Product).get(record.product_id):
-                messagebox.showwarning("Exists", "Product already exists")
-                return
-
-            product = Product(id=record.product_id, **data)
-            session.add(product)
-            session.add(ProductHistory(product_id=product.id, name=product.name, action='restored', data=record.data))
+            history = ProductHistory(**self.last_deleted_history)
+            session.add(history)
             session.commit()
-            messagebox.showinfo("Success", "Product restored")
-            self.refresh_products()
+            messagebox.showinfo("Success", "History entry restored")
+            self.last_deleted_history = None
             self.refresh_history()
-            self.notify_change()
         except Exception as e:
             session.rollback()
-            messagebox.showerror("Error", f"Failed to restore product: {e}")
+            messagebox.showerror("Error", f"Failed to restore history entry: {e}")
         finally:
             session.close()
 
