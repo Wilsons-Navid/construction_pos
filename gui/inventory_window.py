@@ -63,7 +63,7 @@ class InventoryWindow:
         products_tree_frame.columnconfigure(0, weight=1)
         products_tree_frame.rowconfigure(0, weight=1)
         
-        columns = ('ID', 'Name', 'Category', 'Barcode', 'Unit', 'Cost', 'Price', 'Stock', 'Min Stock', 'Status')
+        columns = ('ID', 'Name', 'Category', 'Supplier', 'Barcode', 'Unit', 'Cost', 'Price', 'Stock', 'Min Stock', 'Status')
         self.products_tree = ttk.Treeview(products_tree_frame, columns=columns, show='headings', height=20)
 
         # Define headings and columns
@@ -71,6 +71,7 @@ class InventoryWindow:
             'ID': (_('id'), 50, 'center'),
             'Name': (_('product_name'), 200, 'w'),
             'Category': (_('category'), 120, 'center'),
+            'Supplier': (_('supplier'), 150, 'w'),
             'Barcode': (_('barcode'), 100, 'center'),
             'Unit': (_('unit'), 60, 'center'),
             'Cost': (_('cost_price'), 100, 'e'),
@@ -258,8 +259,8 @@ class InventoryWindow:
             for item in self.products_tree.get_children():
                 self.products_tree.delete(item)
 
-            # Build query - only show active products
-            query = session.query(Product).filter(Product.is_active == True)
+            # Build query - show all products
+            query = session.query(Product)
 
             # Use provided search term or current search box value
             if search_term is None:
@@ -282,6 +283,7 @@ class InventoryWindow:
                     product.id,
                     product.name,
                     category_name,
+                    product.supplier_name or "",
                     product.barcode or "",
                     product.unit,
                     f"{product.cost_price:,.0f}",
@@ -545,7 +547,7 @@ class InventoryWindow:
                 product.is_active = False
                 session.commit()
                 messagebox.showinfo("Success", "Product deactivated successfully!")
-                # Clear search so deactivated product disappears consistently
+                # Clear search to refresh view
                 self.product_search_var.set('')
                 self.load_data()
                 self.notify_change()
@@ -565,7 +567,7 @@ class InventoryWindow:
         
         product_id = self.products_tree.item(selection[0])['values'][0]
         product_name = self.products_tree.item(selection[0])['values'][1]
-        current_stock = int(self.products_tree.item(selection[0])['values'][7])
+        current_stock = int(self.products_tree.item(selection[0])['values'][8])
 
         dialog = StockAdjustmentDialog(self.parent, product_name, current_stock)
         self.parent.wait_window(dialog.dialog)
@@ -797,47 +799,52 @@ class ProductDialog:
         self.barcode_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.barcode_var, width=40).grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
         
+        # Supplier
+        ttk.Label(main_frame, text="Supplier Name:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.supplier_var = tk.StringVar()
+        ttk.Entry(main_frame, textvariable=self.supplier_var, width=40).grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # Category
-        ttk.Label(main_frame, text="Category:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Category:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.category_var = tk.StringVar()
         self.category_combo = ttk.Combobox(main_frame, textvariable=self.category_var, width=37, state="readonly")
-        self.category_combo.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5)
-        
+        self.category_combo.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # Unit
-        ttk.Label(main_frame, text="Unit:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Unit:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.unit_var = tk.StringVar(value="piece")
-        unit_combo = ttk.Combobox(main_frame, textvariable=self.unit_var, 
-                                values=["piece", "bag", "meter", "kg", "ton", "liter", "box", "set"], 
+        unit_combo = ttk.Combobox(main_frame, textvariable=self.unit_var,
+                                values=["piece", "bag", "meter", "kg", "ton", "liter", "box", "set"],
                                 width=37, state="readonly")
-        unit_combo.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5)
-        
+        unit_combo.grid(row=5, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # Cost price
-        ttk.Label(main_frame, text="Cost Price:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Cost Price:").grid(row=6, column=0, sticky=tk.W, pady=5)
         self.cost_var = tk.StringVar(value="0")
-        ttk.Entry(main_frame, textvariable=self.cost_var, width=40).grid(row=5, column=1, sticky=(tk.W, tk.E), pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.cost_var, width=40).grid(row=6, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # Selling price
-        ttk.Label(main_frame, text="Selling Price:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Selling Price:").grid(row=7, column=0, sticky=tk.W, pady=5)
         self.price_var = tk.StringVar(value="0")
-        ttk.Entry(main_frame, textvariable=self.price_var, width=40).grid(row=6, column=1, sticky=(tk.W, tk.E), pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.price_var, width=40).grid(row=7, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # Stock quantity
-        ttk.Label(main_frame, text="Stock Quantity:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Stock Quantity:").grid(row=8, column=0, sticky=tk.W, pady=5)
         self.stock_var = tk.StringVar(value="0")
-        ttk.Entry(main_frame, textvariable=self.stock_var, width=40).grid(row=7, column=1, sticky=(tk.W, tk.E), pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.stock_var, width=40).grid(row=8, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # Minimum stock level
-        ttk.Label(main_frame, text="Min Stock Level:").grid(row=8, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text="Min Stock Level:").grid(row=9, column=0, sticky=tk.W, pady=5)
         self.min_stock_var = tk.StringVar(value="5")
-        ttk.Entry(main_frame, textvariable=self.min_stock_var, width=40).grid(row=8, column=1, sticky=(tk.W, tk.E), pady=5)
-        
+        ttk.Entry(main_frame, textvariable=self.min_stock_var, width=40).grid(row=9, column=1, sticky=(tk.W, tk.E), pady=5)
+
         # Active status
         self.active_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(main_frame, text="Active", variable=self.active_var).grid(row=9, column=1, sticky=tk.W, pady=10)
-        
+        ttk.Checkbutton(main_frame, text="Active", variable=self.active_var).grid(row=10, column=1, sticky=tk.W, pady=10)
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=10, column=0, columnspan=2, pady=20)
+        button_frame.grid(row=11, column=0, columnspan=2, pady=20)
         
         ttk.Button(button_frame, text="Save", command=self.save_product).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
@@ -867,6 +874,7 @@ class ProductDialog:
             self.name_var.set(self.product.name)
             self.description_text.insert('1.0', self.product.description or "")
             self.barcode_var.set(self.product.barcode or "")
+            self.supplier_var.set(self.product.supplier_name or "")
             if self.product.category:
                 self.category_var.set(self.product.category.name)
             self.unit_var.set(self.product.unit)
@@ -905,6 +913,7 @@ class ProductDialog:
                 'name': self.name_var.get().strip(),
                 'description': self.description_text.get('1.0', tk.END).strip(),
                 'barcode': self.barcode_var.get().strip() or None,
+                'supplier_name': self.supplier_var.get().strip() or None,
                 'category_id': category_id,
                 'unit': self.unit_var.get(),
                 'cost_price': float(self.cost_var.get() or 0),

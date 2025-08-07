@@ -27,6 +27,7 @@ class Product(Base):
     description = Column(Text)
     barcode = Column(String(50), unique=True, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"))
+    supplier_name = Column(String(200))
     unit = Column(String(20), default="piece")  # piece, bag, meter, kg, ton
     cost_price = Column(Float, default=0.0)
     selling_price = Column(Float, nullable=False)
