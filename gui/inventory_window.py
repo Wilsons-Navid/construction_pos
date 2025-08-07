@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from database.database import db_manager
 from database.models import Product, Category, StockMovement
+from utils.i18n import translate as _
 
 class InventoryWindow:
     def __init__(self, parent):
@@ -18,22 +19,22 @@ class InventoryWindow:
         
         # Products tab
         self.products_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.products_frame, text="Products")
+        self.notebook.add(self.products_frame, text=_('products'))
         self.setup_products_tab()
         
         # Categories tab
         self.categories_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.categories_frame, text="Categories")
+        self.notebook.add(self.categories_frame, text=_('categories_tab'))
         self.setup_categories_tab()
         
         # Stock Movements tab
         self.movements_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.movements_frame, text="Stock Movements")
+        self.notebook.add(self.movements_frame, text=_('stock_movements'))
         self.setup_movements_tab()
         
         # Low Stock Alert tab
         self.alerts_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.alerts_frame, text="Low Stock Alerts")
+        self.notebook.add(self.alerts_frame, text=_('low_stock_alerts'))
         self.setup_alerts_tab()
     
     def setup_products_tab(self):
@@ -44,14 +45,14 @@ class InventoryWindow:
         control_frame.columnconfigure(2, weight=1)
         
         # Buttons
-        ttk.Button(control_frame, text="Add Product", command=self.add_product).grid(row=0, column=0, padx=2)
-        ttk.Button(control_frame, text="Edit Product", command=self.edit_product).grid(row=0, column=1, padx=2)
-        ttk.Button(control_frame, text="Delete Product", command=self.delete_product).grid(row=0, column=2, padx=2)
-        ttk.Button(control_frame, text="Adjust Stock", command=self.adjust_stock).grid(row=0, column=3, padx=2)
-        ttk.Button(control_frame, text="Refresh", command=self.refresh_products).grid(row=0, column=4, padx=2)
+        ttk.Button(control_frame, text=_('add_product'), command=self.add_product).grid(row=0, column=0, padx=2)
+        ttk.Button(control_frame, text=_('edit_product'), command=self.edit_product).grid(row=0, column=1, padx=2)
+        ttk.Button(control_frame, text=_('delete_product'), command=self.delete_product).grid(row=0, column=2, padx=2)
+        ttk.Button(control_frame, text=_('adjust_stock'), command=self.adjust_stock).grid(row=0, column=3, padx=2)
+        ttk.Button(control_frame, text=_('refresh'), command=self.refresh_products).grid(row=0, column=4, padx=2)
         
         # Search
-        ttk.Label(control_frame, text="Search:").grid(row=0, column=5, padx=(10, 2))
+        ttk.Label(control_frame, text=_('search_label')).grid(row=0, column=5, padx=(10, 2))
         self.product_search_var = tk.StringVar()
         self.product_search_var.trace('w', self.on_product_search)
         ttk.Entry(control_frame, textvariable=self.product_search_var, width=20).grid(row=0, column=6, padx=2)
@@ -102,9 +103,9 @@ class InventoryWindow:
         cat_control_frame = ttk.Frame(self.categories_frame)
         cat_control_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         
-        ttk.Button(cat_control_frame, text="Add Category", command=self.add_category).grid(row=0, column=0, padx=2)
-        ttk.Button(cat_control_frame, text="Edit Category", command=self.edit_category).grid(row=0, column=1, padx=2)
-        ttk.Button(cat_control_frame, text="Delete Category", command=self.delete_category).grid(row=0, column=2, padx=2)
+        ttk.Button(cat_control_frame, text=_('add_category'), command=self.add_category).grid(row=0, column=0, padx=2)
+        ttk.Button(cat_control_frame, text=_('edit_category'), command=self.edit_category).grid(row=0, column=1, padx=2)
+        ttk.Button(cat_control_frame, text=_('delete_category'), command=self.delete_category).grid(row=0, column=2, padx=2)
         
         # Categories treeview
         categories_tree_frame = ttk.Frame(self.categories_frame)
@@ -146,12 +147,12 @@ class InventoryWindow:
         mov_control_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         mov_control_frame.columnconfigure(3, weight=1)
         
-        ttk.Button(mov_control_frame, text="Add Stock", command=self.add_stock).grid(row=0, column=0, padx=2)
-        ttk.Button(mov_control_frame, text="Remove Stock", command=self.remove_stock).grid(row=0, column=1, padx=2)
-        ttk.Button(mov_control_frame, text="Refresh", command=self.refresh_movements).grid(row=0, column=2, padx=2)
+        ttk.Button(mov_control_frame, text=_('add_stock'), command=self.add_stock).grid(row=0, column=0, padx=2)
+        ttk.Button(mov_control_frame, text=_('remove_stock'), command=self.remove_stock).grid(row=0, column=1, padx=2)
+        ttk.Button(mov_control_frame, text=_('refresh'), command=self.refresh_movements).grid(row=0, column=2, padx=2)
         
         # Filter by movement type
-        ttk.Label(mov_control_frame, text="Filter:").grid(row=0, column=4, padx=(10, 2))
+        ttk.Label(mov_control_frame, text=_('filter')).grid(row=0, column=4, padx=(10, 2))
         self.movement_filter_var = tk.StringVar(value="All")
         movement_filter = ttk.Combobox(mov_control_frame, textvariable=self.movement_filter_var, 
                                      values=["All", "in", "out", "adjustment"], state="readonly", width=15)
@@ -202,10 +203,10 @@ class InventoryWindow:
         alert_info_frame = ttk.Frame(self.alerts_frame)
         alert_info_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         
-        ttk.Label(alert_info_frame, text="Products below minimum stock level:", 
+        ttk.Label(alert_info_frame, text=_('products_below_min'),
                  font=('Arial', 12, 'bold')).grid(row=0, column=0, sticky=tk.W)
-        
-        ttk.Button(alert_info_frame, text="Refresh Alerts", command=self.refresh_alerts).grid(row=0, column=1, padx=10)
+
+        ttk.Button(alert_info_frame, text=_('refresh_alerts'), command=self.refresh_alerts).grid(row=0, column=1, padx=10)
         
         # Low stock treeview
         alerts_tree_frame = ttk.Frame(self.alerts_frame)

@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from database.database import db_manager
 from database.models import Customer, Sale, SaleItem
+from utils.i18n import translate as _
 
 class CustomersWindow:
     """Display customers and their purchase history."""
@@ -22,8 +23,8 @@ class CustomersWindow:
         main_pane.add(left_frame, weight=1)
 
         self.customers_tree = ttk.Treeview(left_frame, columns=("ID", "Name"), show="headings", height=15)
-        self.customers_tree.heading("ID", text="ID")
-        self.customers_tree.heading("Name", text="Customer")
+        self.customers_tree.heading("ID", text=_('id'))
+        self.customers_tree.heading("Name", text=_('customer_label'))
         self.customers_tree.column("ID", width=50, anchor="center")
         self.customers_tree.column("Name", width=150)
         self.customers_tree.pack(fill="both", expand=True)
@@ -36,9 +37,9 @@ class CustomersWindow:
         right_frame.rowconfigure(1, weight=1)
 
         self.sales_tree = ttk.Treeview(right_frame, columns=("Sale", "Date", "Total"), show="headings", height=8)
-        self.sales_tree.heading("Sale", text="Sale #")
-        self.sales_tree.heading("Date", text="Date")
-        self.sales_tree.heading("Total", text="Total")
+        self.sales_tree.heading("Sale", text=_('sale_number'))
+        self.sales_tree.heading("Date", text=_('date'))
+        self.sales_tree.heading("Total", text=_('total_label'))
         self.sales_tree.column("Sale", width=100, anchor="center")
         self.sales_tree.column("Date", width=140, anchor="center")
         self.sales_tree.column("Total", width=100, anchor="e")
@@ -46,9 +47,9 @@ class CustomersWindow:
         self.sales_tree.bind("<<TreeviewSelect>>", self.on_sale_select)
 
         self.items_tree = ttk.Treeview(right_frame, columns=("Product", "Qty", "Amount"), show="headings")
-        self.items_tree.heading("Product", text="Product")
-        self.items_tree.heading("Qty", text="Qty")
-        self.items_tree.heading("Amount", text="Amount")
+        self.items_tree.heading("Product", text=_('shopping_cart_product'))
+        self.items_tree.heading("Qty", text=_('qty'))
+        self.items_tree.heading("Amount", text=_('amount'))
         self.items_tree.column("Product", width=200)
         self.items_tree.column("Qty", width=60, anchor="center")
         self.items_tree.column("Amount", width=100, anchor="e")

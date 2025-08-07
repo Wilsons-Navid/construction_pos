@@ -21,6 +21,7 @@ class MainWindow:
         root.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=1)
         self.main_frame.rowconfigure(1, weight=1)
+        root.bind('<<LanguageChanged>>', self.reload_language)
 
         self.setup_ui()
         self.show_pos()
@@ -49,7 +50,7 @@ class MainWindow:
         self.root.after(1000, self.update_time)
 
     def create_sidebar(self):
-        sidebar = ttk.LabelFrame(self.main_frame, text="Navigation", padding="10")
+        sidebar = ttk.LabelFrame(self.main_frame, text=_('navigation'), padding="10")
         sidebar.grid(row=1, column=0, sticky="ns")
         buttons = [
             (f"🛒 { _('pos') }", self.show_pos),
@@ -62,7 +63,7 @@ class MainWindow:
             ttk.Button(sidebar, text=text, command=cmd, style='Large.TButton', width=15).grid(row=i, column=0, pady=5, sticky="ew")
 
     def create_status_bar(self):
-        self.status_label = ttk.Label(self.main_frame, text="Ready", relief=tk.SUNKEN)
+        self.status_label = ttk.Label(self.main_frame, text=_('ready'), relief=tk.SUNKEN)
         self.status_label.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
 
     def clear_content(self):
@@ -80,24 +81,41 @@ class MainWindow:
     def show_pos(self):
         self.clear_content()
         self.current_window = POSWindow(self.content_frame)
-        self.update_status("Point of Sale - Ready")
+        self.update_status(_("pos_ready"))
 
     def show_inventory(self):
         self.clear_content()
         self.current_window = InventoryWindow(self.content_frame)
-        self.update_status("Inventory Management")
+        self.update_status(_("inventory_management"))
 
     def show_reports(self):
         self.clear_content()
         self.current_window = ReportsWindow(self.content_frame)
-        self.update_status("Reports & Analytics")
+        self.update_status(_("reports_analytics"))
 
     def show_customers(self):
         self.clear_content()
         self.current_window = CustomersWindow(self.content_frame)
-        self.update_status("Customers")
+        self.update_status(_("customers"))
 
     def show_settings(self):
         self.clear_content()
         self.current_window = SettingsWindow(self.content_frame, self.root)
         self.update_status(_("settings"))
+
+
+    def reload_language(self, event=None):
+        """Rebuild UI when language preference changes."""
+        try:
+            self.main_frame.destroy()
+        except Exception:
+            pass
+        self.main_frame = ttk.Frame(self.root, padding="10")
+        self.main_frame.grid(row=0, column=0, sticky="nsew")
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(0, weight=1)
+        self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.rowconfigure(1, weight=1)
+        self.setup_ui()
+        self.show_pos()
+

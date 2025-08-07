@@ -42,11 +42,11 @@ class POSWindow:
     def setup_left_panel(self):
         """Setup left panel with product search and grid"""
         # Search section
-        search_frame = ttk.LabelFrame(self.left_panel, text="Product Search", padding="10")
+        search_frame = ttk.LabelFrame(self.left_panel, text=_('product_search'), padding="10")
         search_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         search_frame.columnconfigure(1, weight=1)
         
-        ttk.Label(search_frame, text="Search:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(search_frame, text=f"{_('search')}:").grid(row=0, column=0, sticky=tk.W)
         
         self.search_var = tk.StringVar()
         self.search_var.trace('w', self.on_search_change)
@@ -55,14 +55,14 @@ class POSWindow:
         search_entry.focus()
         
         # Category filter
-        ttk.Label(search_frame, text="Category:").grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
+        ttk.Label(search_frame, text=f"{_('category')}:").grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
         self.category_var = tk.StringVar()
         self.category_combo = ttk.Combobox(search_frame, textvariable=self.category_var, state="readonly")
         self.category_combo.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(5, 0), pady=(5, 0))
         self.category_combo.bind('<<ComboboxSelected>>', self.on_category_change)
         
         # Products grid
-        products_frame = ttk.LabelFrame(self.left_panel, text="Products", padding="5")
+        products_frame = ttk.LabelFrame(self.left_panel, text=_('products'), padding="5")
         products_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
         products_frame.columnconfigure(0, weight=1)
         products_frame.rowconfigure(0, weight=1)
@@ -72,12 +72,12 @@ class POSWindow:
         self.products_tree = ttk.Treeview(products_frame, columns=columns, show='headings', height=15)
         
         # Define headings
-        self.products_tree.heading('ID', text='ID')
-        self.products_tree.heading('Name', text='Product Name')
-        self.products_tree.heading('Category', text='Category')
-        self.products_tree.heading('Price', text='Price')
-        self.products_tree.heading('Stock', text='Stock')
-        self.products_tree.heading('Unit', text='Unit')
+        self.products_tree.heading('ID', text=_('id'))
+        self.products_tree.heading('Name', text=_('name'))
+        self.products_tree.heading('Category', text=_('category'))
+        self.products_tree.heading('Price', text=_('price'))
+        self.products_tree.heading('Stock', text=_('stock'))
+        self.products_tree.heading('Unit', text=_('unit'))
         
         # Define column widths
         self.products_tree.column('ID', width=50, anchor='center')
@@ -101,7 +101,7 @@ class POSWindow:
         self.products_tree.bind('<Double-1>', self.add_to_cart)
         
         # Add to cart button
-        add_button = ttk.Button(products_frame, text="Add to Cart", command=self.add_to_cart)
+        add_button = ttk.Button(products_frame, text=_('add_to_cart'), command=self.add_to_cart)
         add_button.grid(row=2, column=0, pady=10)
 
         # Configure grid weights
@@ -109,7 +109,7 @@ class POSWindow:
         self.left_panel.rowconfigure(1, weight=1)
 
         # Dashboard frame for quick stats
-        dashboard_frame = ttk.LabelFrame(self.left_panel, text="Dashboard", padding="5")
+        dashboard_frame = ttk.LabelFrame(self.left_panel, text=_('dashboard'), padding="5")
         dashboard_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
 
         ttk.Label(dashboard_frame, text=_("total_sales")).grid(row=0, column=0, sticky=tk.W)
@@ -127,7 +127,7 @@ class POSWindow:
     def setup_right_panel(self):
         """Setup right panel with cart and checkout"""
         # Customer selection
-        customer_frame = ttk.LabelFrame(self.right_panel, text="Customer", padding="10")
+        customer_frame = ttk.LabelFrame(self.right_panel, text=_('customer_label'), padding="10")
         customer_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         customer_frame.columnconfigure(1, weight=1)
         
@@ -137,7 +137,7 @@ class POSWindow:
         self.customer_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(5, 0))
         
         # Shopping cart
-        cart_frame = ttk.LabelFrame(self.right_panel, text="Shopping Cart", padding="5")
+        cart_frame = ttk.LabelFrame(self.right_panel, text=_('shopping_cart'), padding="5")
         cart_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
         cart_frame.columnconfigure(0, weight=1)
         cart_frame.rowconfigure(0, weight=1)
@@ -145,9 +145,11 @@ class POSWindow:
         # Cart treeview
         cart_columns = ('Product', 'Qty', 'Price', 'Total')
         self.cart_tree = ttk.Treeview(cart_frame, columns=cart_columns, show='headings', height=10)
-        
-        for col in cart_columns:
-            self.cart_tree.heading(col, text=col)
+
+        self.cart_tree.heading('Product', text=_('shopping_cart_product'))
+        self.cart_tree.heading('Qty', text=_('qty'))
+        self.cart_tree.heading('Price', text=_('price'))
+        self.cart_tree.heading('Total', text=_('total'))
         
         self.cart_tree.column('Product', width=150)
         self.cart_tree.column('Qty', width=60, anchor='center')
@@ -164,17 +166,17 @@ class POSWindow:
         cart_buttons_frame = ttk.Frame(cart_frame)
         cart_buttons_frame.grid(row=1, column=0, columnspan=2, pady=5)
         
-        ttk.Button(cart_buttons_frame, text="Edit Qty", command=self.edit_quantity).grid(row=0, column=0, padx=2)
-        ttk.Button(cart_buttons_frame, text="Remove", command=self.remove_from_cart).grid(row=0, column=1, padx=2)
-        ttk.Button(cart_buttons_frame, text="Clear All", command=self.clear_cart).grid(row=0, column=2, padx=2)
+        ttk.Button(cart_buttons_frame, text=_('edit_qty'), command=self.edit_quantity).grid(row=0, column=0, padx=2)
+        ttk.Button(cart_buttons_frame, text=_('remove'), command=self.remove_from_cart).grid(row=0, column=1, padx=2)
+        ttk.Button(cart_buttons_frame, text=_('clear_all'), command=self.clear_cart).grid(row=0, column=2, padx=2)
         
         # Totals section
-        totals_frame = ttk.LabelFrame(self.right_panel, text="Order Total", padding="10")
+        totals_frame = ttk.LabelFrame(self.right_panel, text=_('order_total'), padding="10")
         totals_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         totals_frame.columnconfigure(1, weight=1)
         
         # Total labels
-        ttk.Label(totals_frame, text="Subtotal:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(totals_frame, text=_('subtotal_label')).grid(row=0, column=0, sticky=tk.W)
         self.subtotal_label = ttk.Label(totals_frame, text="0.00", font=('Arial', 12, 'bold'))
         self.subtotal_label.grid(row=0, column=1, sticky=tk.E)
 
@@ -187,28 +189,32 @@ class POSWindow:
         self.tax_label = ttk.Label(totals_frame, text="0.00")
         self.tax_label.grid(row=2, column=1, sticky=tk.E)
 
+
+        ttk.Label(totals_frame, text=f"{ _('total_label') }").grid(row=3, column=0, sticky=tk.W)
+
         ttk.Label(totals_frame, text=f"{ _('total') }:").grid(row=3, column=0, sticky=tk.W)
+
         self.total_label = ttk.Label(totals_frame, text="0.00", font=('Arial', 14, 'bold'))
         self.total_label.grid(row=3, column=1, sticky=tk.E)
         
         # Payment section
-        payment_frame = ttk.LabelFrame(self.right_panel, text="Payment", padding="10")
+        payment_frame = ttk.LabelFrame(self.right_panel, text=_('payment'), padding="10")
         payment_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
         payment_frame.columnconfigure(1, weight=1)
         
-        ttk.Label(payment_frame, text="Payment Method:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(payment_frame, text=_('payment_method_label')).grid(row=0, column=0, sticky=tk.W)
         self.payment_var = tk.StringVar(value="cash")
         payment_combo = ttk.Combobox(payment_frame, textvariable=self.payment_var, 
                                    values=["cash", "card", "credit"], state="readonly")
         payment_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(5, 0))
         
-        ttk.Label(payment_frame, text="Amount Paid:").grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
+        ttk.Label(payment_frame, text=_('amount_paid_label')).grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
         self.paid_var = tk.StringVar()
         self.paid_entry = ttk.Entry(payment_frame, textvariable=self.paid_var)
         self.paid_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(5, 0), pady=(5, 0))
         self.paid_entry.bind('<KeyRelease>', self.calculate_change)
         
-        ttk.Label(payment_frame, text="Change:").grid(row=2, column=0, sticky=tk.W, pady=(5, 0))
+        ttk.Label(payment_frame, text=_('change_label')).grid(row=2, column=0, sticky=tk.W, pady=(5, 0))
         self.change_label = ttk.Label(payment_frame, text="0.00", font=('Arial', 12, 'bold'))
         self.change_label.grid(row=2, column=1, sticky=tk.E, pady=(5, 0))
         
@@ -218,11 +224,11 @@ class POSWindow:
         checkout_frame.columnconfigure(0, weight=1)
         checkout_frame.columnconfigure(1, weight=1)
         
-        ttk.Button(checkout_frame, text="Process Sale", command=self.process_sale, 
+        ttk.Button(checkout_frame, text=_('process_sale'), command=self.process_sale,
                   style='Large.TButton').grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-        
-        ttk.Button(checkout_frame, text="Hold Sale", command=self.hold_sale).grid(row=1, column=0, sticky=(tk.W, tk.E), padx=(0, 2))
-        ttk.Button(checkout_frame, text="New Sale", command=self.new_sale).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(2, 0))
+
+        ttk.Button(checkout_frame, text=_('hold_sale'), command=self.hold_sale).grid(row=1, column=0, sticky=(tk.W, tk.E), padx=(0, 2))
+        ttk.Button(checkout_frame, text=_('new_sale'), command=self.new_sale).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(2, 0))
         
         # Configure grid weights
         self.right_panel.columnconfigure(0, weight=1)
@@ -247,7 +253,7 @@ class POSWindow:
             self.refresh_products()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load products: {e}")
+            messagebox.showerror(_("error"), f"{_('failed_load_products')}: {e}")
         finally:
             session.close()
     
@@ -292,7 +298,7 @@ class POSWindow:
                 self.products_tree.insert('', tk.END, values=values)
                 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh products: {e}")
+            messagebox.showerror(_("error"), f"{_('failed_refresh_products')}: {e}")
         finally:
             session.close()
     
@@ -309,7 +315,7 @@ class POSWindow:
                 self.customer_combo.set(customer_names[0])
                 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load customers: {e}")
+            messagebox.showerror(_("error"), f"{_('failed_load_customers')}: {e}")
         finally:
             session.close()
 
@@ -358,7 +364,7 @@ class POSWindow:
         """Add selected product to cart"""
         selection = self.products_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a product to add to cart.")
+            messagebox.showwarning(_("no_selection"), _("select_product"))
             return
         
         item = self.products_tree.item(selection[0])
@@ -369,7 +375,7 @@ class POSWindow:
         unit = item['values'][5]
         
         if stock <= 0:
-            messagebox.showwarning("Out of Stock", f"{product_name} is out of stock.")
+            messagebox.showwarning(_("out_of_stock"), _("out_of_stock_msg").format(product_name))
             return
         
         # Ask for quantity
@@ -378,8 +384,8 @@ class POSWindow:
             return
         
         if quantity > stock:
-            messagebox.showwarning("Insufficient Stock", 
-                                 f"Only {stock} {unit}(s) available for {product_name}.")
+            messagebox.showwarning(_("insufficient_stock_title"),
+                                 _("insufficient_stock").format(stock, unit, product_name))
             return
         
         # Check if product already in cart
@@ -388,7 +394,7 @@ class POSWindow:
                 # Update quantity
                 new_qty = cart_item['quantity'] + quantity
                 if new_qty > stock:
-                    messagebox.showwarning("Insufficient Stock", 
+                    messagebox.showwarning(_("insufficient_stock_title"),
                                          f"Total quantity would exceed available stock ({stock}).")
                     return
                 cart_item['quantity'] = new_qty
@@ -412,7 +418,7 @@ class POSWindow:
     def ask_quantity(self, product_name, max_stock, unit):
         """Ask user for quantity"""
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Enter Quantity")
+        dialog.title(_("enter_quantity"))
         dialog.geometry("400x200")
         dialog.transient(self.parent)
         dialog.grab_set()
@@ -425,10 +431,10 @@ class POSWindow:
         
         result = {'quantity': None}
         
-        ttk.Label(dialog, text=f"Product: {product_name}").pack(pady=10)
-        ttk.Label(dialog, text=f"Available: {max_stock} {unit}(s)").pack()
-        
-        ttk.Label(dialog, text="Quantity:").pack(pady=(10, 5))
+        ttk.Label(dialog, text=f"{_('product_label')}: {product_name}").pack(pady=10)
+        ttk.Label(dialog, text=f"{_('available')}: {max_stock} {unit}(s)").pack()
+
+        ttk.Label(dialog, text=f"{_('quantity')}:").pack(pady=(10, 5))
         qty_var = tk.StringVar(value="1")
         qty_entry = ttk.Entry(dialog, textvariable=qty_var, width=10)
         qty_entry.pack()
@@ -534,7 +540,7 @@ class POSWindow:
         try:
             product = session.query(Product).get(cart_item['product_id'])
             if not product:
-                messagebox.showerror("Error", "Product not found.")
+                messagebox.showerror(_("error"), _("failed_refresh_products"))
                 return
             
             # Available stock includes current cart quantity
@@ -545,8 +551,8 @@ class POSWindow:
                 return
             
             if new_qty > available_stock:
-                messagebox.showwarning("Insufficient Stock", 
-                                     f"Only {available_stock} {cart_item['unit']}(s) available.")
+                messagebox.showwarning(_("insufficient_stock_title"),
+                                     _("insufficient_stock").format(available_stock, cart_item['unit'], cart_item['name']))
                 return
             
             # Update cart item
@@ -557,7 +563,7 @@ class POSWindow:
             self.calculate_totals()
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to edit quantity: {e}")
+            messagebox.showerror(_("error"), f"Failed to edit quantity: {e}")
         finally:
             session.close()
     
@@ -565,7 +571,7 @@ class POSWindow:
         """Remove selected item from cart"""
         selection = self.cart_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an item to remove.")
+            messagebox.showwarning(_("no_selection"), _("select_product"))
             return
         
         item_index = self.cart_tree.index(selection[0])
@@ -576,7 +582,7 @@ class POSWindow:
     
     def clear_cart(self):
         """Clear all items from cart"""
-        if self.cart_items and messagebox.askyesno("Clear Cart", "Are you sure you want to clear all items?"):
+        if self.cart_items and messagebox.askyesno(_("clear_cart"), _("confirm_clear_cart")):
             self.cart_items.clear()
             self.refresh_cart()
             self.calculate_totals()

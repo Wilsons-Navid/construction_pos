@@ -6,6 +6,9 @@ from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from database.database import DatabaseUtils, get_app_dir
+
+from utils.i18n import translate as _
+
 from datetime import datetime
 import os
 
@@ -104,14 +107,14 @@ class ReceiptPrinter:
             story.append(Paragraph(f"{shop_address}<br/>{shop_phone}", self.styles['ShopInfo']))
             
             # Receipt header
-            story.append(Paragraph("SALES RECEIPT", self.styles['ReceiptHeader']))
+            story.append(Paragraph(_("sales_receipt"), self.styles['ReceiptHeader']))
             
             # Sale information
             sale_info = [
-                ['Receipt #:', sale.sale_number],
-                ['Date:', sale.created_at.strftime('%Y-%m-%d %H:%M:%S')],
-                ['Cashier:', sale.user.username if sale.user else 'System'],
-                ['Customer:', sale.customer.name if sale.customer else 'Walk-in Customer']
+                [_('receipt_number'), sale.sale_number],
+                [_('date'), sale.created_at.strftime('%Y-%m-%d %H:%M:%S')],
+                [_('cashier'), sale.user.username if sale.user else 'System'],
+                [_('customer_label') + ':', sale.customer.name if sale.customer else 'Walk-in Customer']
             ]
             
             sale_info_table = Table(sale_info, colWidths=[1.5*inch, 3*inch])
@@ -126,7 +129,7 @@ class ReceiptPrinter:
             story.append(Spacer(1, 12))
             
             # Items table
-            items_data = [['Item', 'Qty', 'Unit Price', 'Total']]
+            items_data = [[_('items'), _('qty'), _('unit_price'), _('total')]]
             
             currency = DatabaseUtils.get_setting_value('currency', 'FCFA')
             
@@ -161,18 +164,18 @@ class ReceiptPrinter:
             
             # Totals section
             totals_data = [
-                ['Subtotal:', f"{sale.subtotal:,.0f} {currency}"],
-                ['Tax:', f"{sale.tax_amount:,.0f} {currency}"],
-                ['Total:', f"{sale.total_amount:,.0f} {currency}"]
+                [_('subtotal_label'), f"{sale.subtotal:,.0f} {currency}"],
+                [_('tax_label'), f"{sale.tax_amount:,.0f} {currency}"],
+                [_('total_label'), f"{sale.total_amount:,.0f} {currency}"]
             ]
             
             if sale.discount_amount > 0:
                 totals_data.insert(-1, ['Discount:', f"-{sale.discount_amount:,.0f} {currency}"])
             
             totals_data.extend([
-                ['Payment Method:', sale.payment_method.title()],
-                ['Amount Paid:', f"{sale.amount_paid:,.0f} {currency}"],
-                ['Change:', f"{sale.change_amount:,.0f} {currency}"]
+                [_('payment_method_label'), sale.payment_method.title()],
+                [_('amount_paid_label'), f"{sale.amount_paid:,.0f} {currency}"],
+                [_('change_label'), f"{sale.change_amount:,.0f} {currency}"]
             ])
             
             totals_table = Table(totals_data, colWidths=[2*inch, 2*inch])
