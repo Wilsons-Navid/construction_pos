@@ -378,26 +378,29 @@ class POSWindow:
             messagebox.showwarning(_("out_of_stock"), _("out_of_stock_msg").format(product_name))
             return
         
-        # Ask for quantity
-        quantity = self.ask_quantity(product_name, stock, unit)
-        if quantity is None or quantity <= 0:
+        # Ask for quantity and allow price adjustment
+        result = self.ask_quantity(product_name, stock, unit, price)
+        if not result:
             return
-        
+        quantity = result['quantity']
+        price = result['price']
+
         if quantity > stock:
             messagebox.showwarning(_("insufficient_stock_title"),
                                  _("insufficient_stock").format(stock, unit, product_name))
             return
-        
+
         # Check if product already in cart
         for i, cart_item in enumerate(self.cart_items):
             if cart_item['product_id'] == product_id:
-                # Update quantity
+                # Update quantity and price
                 new_qty = cart_item['quantity'] + quantity
                 if new_qty > stock:
                     messagebox.showwarning(_("insufficient_stock_title"),
                                          f"Total quantity would exceed available stock ({stock}).")
                     return
                 cart_item['quantity'] = new_qty
+                cart_item['price'] = price
                 cart_item['total'] = new_qty * price
                 break
         else:
@@ -415,22 +418,22 @@ class POSWindow:
         self.refresh_cart()
         self.calculate_totals()
     
-    def ask_quantity(self, product_name, max_stock, unit):
-        """Ask user for quantity"""
+    def ask_quantity(self, product_name, max_stock, unit, price=None):
+        """Ask user for quantity (and price if provided)"""
         dialog = tk.Toplevel(self.parent)
         dialog.title(_("enter_quantity"))
-        dialog.geometry("400x200")
+        dialog.geometry("400x250")
         dialog.transient(self.parent)
         dialog.grab_set()
-        
+
         # Center the dialog
-        dialog.geometry("400x200+{}+{}".format(
+        dialog.geometry("400x250+{}+{}".format(
             self.parent.winfo_rootx() + 50,
             self.parent.winfo_rooty() + 50
         ))
-        
-        result = {'quantity': None}
-        
+
+        result = {'quantity': None, 'price': price}
+
         ttk.Label(dialog, text=f"{_('product_label')}: {product_name}").pack(pady=10)
         ttk.Label(dialog, text=f"{_('available')}: {max_stock} {unit}(s)").pack()
 
@@ -440,31 +443,53 @@ class POSWindow:
         qty_entry.pack()
         qty_entry.select_range(0, tk.END)
         qty_entry.focus()
-        
+
+        price_var = None
+        if price is not None:
+            ttk.Label(dialog, text=f"{_('price')}:").pack(pady=(10, 5))
+            price_var = tk.StringVar(value=f"{price}")
+            ttk.Entry(dialog, textvariable=price_var, width=10).pack()
+
         def ok_clicked():
             try:
                 qty = float(qty_var.get())
-                if qty > 0:
-                    result['quantity'] = qty
-                    dialog.destroy()
-                else:
-                    messagebox.showwarning("Invalid Quantity", "Quantity must be greater than 0.")
+                if qty <= 0:
+                    raise ValueError
             except ValueError:
-                messagebox.showwarning("Invalid Quantity", "Please enter a valid number.")
-        
+                messagebox.showwarning("Invalid Quantity", "Quantity must be greater than 0.")
+                return
+
+            if price_var is not None:
+                try:
+                    entered_price = float(price_var.get())
+                    if entered_price < price:
+                        messagebox.showwarning(_("error"), _("price_too_low"))
+                        return
+                except ValueError:
+                    messagebox.showwarning(_("error"), "Invalid price")
+                    return
+                result['price'] = entered_price
+
+            result['quantity'] = qty
+            dialog.destroy()
+
         def cancel_clicked():
             dialog.destroy()
-        
+
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
-        
+
         ttk.Button(button_frame, text="OK", command=ok_clicked).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=cancel_clicked).pack(side=tk.LEFT, padx=5)
-        
+
         # Bind Enter key
         qty_entry.bind('<Return>', lambda e: ok_clicked())
-        
+
         dialog.wait_window()
+        if result['quantity'] is None:
+            return None
+        if price is not None:
+            return result
         return result['quantity']
     
     def refresh_cart(self):
