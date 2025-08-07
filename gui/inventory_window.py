@@ -1,8 +1,9 @@
 # gui/inventory_window.py
 import tkinter as tk
 from tkinter import ttk, messagebox
+import json
 from database.database import db_manager
-from database.models import Product, Category, StockMovement
+from database.models import Product, Category, StockMovement, ProductHistory
 from utils.i18n import translate as _
 
 class InventoryWindow:
@@ -36,6 +37,11 @@ class InventoryWindow:
         self.alerts_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.alerts_frame, text=_('low_stock_alerts'))
         self.setup_alerts_tab()
+
+        # History tab
+        self.history_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.history_frame, text=_('history'))
+        self.setup_history_tab()
     
     def setup_products_tab(self):
         """Setup products management tab"""
@@ -239,10 +245,49 @@ class InventoryWindow:
         
         self.alerts_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         alert_v_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        
+
         # Configure grid weights
         self.alerts_frame.columnconfigure(0, weight=1)
         self.alerts_frame.rowconfigure(1, weight=1)
+
+    def setup_history_tab(self):
+        """Setup product history tab"""
+        control_frame = ttk.Frame(self.history_frame)
+        control_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
+        control_frame.columnconfigure(2, weight=1)
+
+        ttk.Button(control_frame, text=_('delete_entry'), command=self.delete_history_entry).grid(row=0, column=0, padx=2)
+        ttk.Button(control_frame, text=_('restore_product'), command=self.restore_product).grid(row=0, column=1, padx=2)
+        ttk.Button(control_frame, text=_('refresh'), command=self.refresh_history).grid(row=0, column=2, padx=2)
+
+        history_tree_frame = ttk.Frame(self.history_frame)
+        history_tree_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
+        history_tree_frame.columnconfigure(0, weight=1)
+        history_tree_frame.rowconfigure(0, weight=1)
+
+        columns = ('ID', 'Product ID', 'Name', 'Action', 'Date')
+        self.history_tree = ttk.Treeview(history_tree_frame, columns=columns, show='headings')
+
+        headings = {
+            'ID': (_('id'), 50, 'center'),
+            'Product ID': (_('product_id'), 80, 'center'),
+            'Name': (_('product_name'), 200, 'w'),
+            'Action': (_('action'), 100, 'center'),
+            'Date': (_('created_date'), 150, 'center')
+        }
+
+        for col, (text, width, anchor) in headings.items():
+            self.history_tree.heading(col, text=text)
+            self.history_tree.column(col, width=width, anchor=anchor)
+
+        hist_v_scroll = ttk.Scrollbar(history_tree_frame, orient=tk.VERTICAL, command=self.history_tree.yview)
+        self.history_tree.configure(yscrollcommand=hist_v_scroll.set)
+
+        self.history_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        hist_v_scroll.grid(row=0, column=1, sticky=(tk.N, tk.S))
+
+        self.history_frame.columnconfigure(0, weight=1)
+        self.history_frame.rowconfigure(1, weight=1)
     
     def load_data(self):
         """Load all data"""
@@ -250,6 +295,7 @@ class InventoryWindow:
         self.refresh_categories()
         self.refresh_movements()
         self.refresh_alerts()
+        self.refresh_history()
     
     def refresh_products(self, search_term=None):
         """Refresh products list"""
@@ -437,6 +483,89 @@ class InventoryWindow:
         finally:
             session.close()
 
+    def refresh_history(self):
+        """Refresh product history list"""
+        session = db_manager.get_session()
+        try:
+            for item in self.history_tree.get_children():
+                self.history_tree.delete(item)
+
+            records = session.query(ProductHistory).order_by(ProductHistory.created_at.desc()).all()
+            for record in records:
+                values = (
+                    record.id,
+                    record.product_id,
+                    record.name,
+                    record.action.capitalize(),
+                    record.created_at.strftime('%Y-%m-%d %H:%M')
+                )
+                self.history_tree.insert('', tk.END, values=values)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to refresh history: {e}")
+        finally:
+            session.close()
+
+    def delete_history_entry(self):
+        """Delete selected history record"""
+        selection = self.history_tree.selection()
+        if not selection:
+            messagebox.showwarning(_("no_selection"), _("no_selection"))
+            return
+
+        history_id = self.history_tree.item(selection[0])['values'][0]
+        if not messagebox.askyesno("Confirm", "Delete selected history entry?"):
+            return
+
+        session = db_manager.get_session()
+        try:
+            record = session.query(ProductHistory).get(history_id)
+            if record:
+                session.delete(record)
+                session.commit()
+                messagebox.showinfo("Success", "History entry deleted")
+                self.refresh_history()
+        except Exception as e:
+            session.rollback()
+            messagebox.showerror("Error", f"Failed to delete history entry: {e}")
+        finally:
+            session.close()
+
+    def restore_product(self):
+        """Restore product from history"""
+        selection = self.history_tree.selection()
+        if not selection:
+            messagebox.showwarning(_("no_selection"), _("no_selection"))
+            return
+
+        history_id = self.history_tree.item(selection[0])['values'][0]
+
+        session = db_manager.get_session()
+        try:
+            record = session.query(ProductHistory).get(history_id)
+            if not record or record.action != 'deleted':
+                messagebox.showwarning("Invalid", "Selected record cannot be restored")
+                return
+
+            data = json.loads(record.data) if record.data else {}
+
+            if session.query(Product).get(record.product_id):
+                messagebox.showwarning("Exists", "Product already exists")
+                return
+
+            product = Product(id=record.product_id, **data)
+            session.add(product)
+            session.add(ProductHistory(product_id=product.id, name=product.name, action='restored', data=record.data))
+            session.commit()
+            messagebox.showinfo("Success", "Product restored")
+            self.refresh_products()
+            self.refresh_history()
+            self.notify_change()
+        except Exception as e:
+            session.rollback()
+            messagebox.showerror("Error", f"Failed to restore product: {e}")
+        finally:
+            session.close()
+
     def notify_change(self):
         """Notify other windows that inventory data has changed"""
         try:
@@ -476,6 +605,10 @@ class InventoryWindow:
             try:
                 product = Product(**dialog.result)
                 session.add(product)
+                session.flush()
+                history = ProductHistory(product_id=product.id, name=product.name,
+                                         action='added', data=json.dumps(dialog.result))
+                session.add(history)
                 session.commit()
                 product_id = product.id
                 messagebox.showinfo("Success", "Product added successfully!")
@@ -543,15 +676,29 @@ class InventoryWindow:
         try:
             product = session.query(Product).get(product_id)
             if product:
-                # Instead of deleting, mark as inactive
-                product.is_active = False
+                data = {
+                    'name': product.name,
+                    'description': product.description,
+                    'barcode': product.barcode,
+                    'category_id': product.category_id,
+                    'supplier_name': product.supplier_name,
+                    'unit': product.unit,
+                    'cost_price': product.cost_price,
+                    'selling_price': product.selling_price,
+                    'stock_quantity': product.stock_quantity,
+                    'min_stock_level': product.min_stock_level,
+                    'is_active': product.is_active
+                }
+                history = ProductHistory(product_id=product.id, name=product.name,
+                                          action='deleted', data=json.dumps(data))
+                session.add(history)
+                session.delete(product)
                 session.commit()
-                messagebox.showinfo("Success", "Product deactivated successfully!")
+                messagebox.showinfo("Success", "Product deleted successfully!")
                 # Clear search to refresh view
                 self.product_search_var.set('')
                 self.load_data()
                 self.notify_change()
-                
         except Exception as e:
             session.rollback()
             messagebox.showerror("Error", f"Failed to delete product: {e}")
