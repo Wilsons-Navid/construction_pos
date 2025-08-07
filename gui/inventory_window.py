@@ -1,7 +1,8 @@
 # gui/inventory_window.py
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import json
+import csv
 from database.database import db_manager
 from database.models import Product, Category, StockMovement, ProductHistory
 from utils.i18n import translate as _
@@ -48,20 +49,21 @@ class InventoryWindow:
         # Control panel
         control_frame = ttk.Frame(self.products_frame)
         control_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=5, pady=5)
-        control_frame.columnconfigure(2, weight=1)
+        control_frame.columnconfigure(3, weight=1)
         
         # Buttons
         ttk.Button(control_frame, text=_('add_product'), command=self.add_product).grid(row=0, column=0, padx=2)
         ttk.Button(control_frame, text=_('edit_product'), command=self.edit_product).grid(row=0, column=1, padx=2)
-        ttk.Button(control_frame, text=_('delete_product'), command=self.delete_product).grid(row=0, column=2, padx=2)
-        ttk.Button(control_frame, text=_('adjust_stock'), command=self.adjust_stock).grid(row=0, column=3, padx=2)
-        ttk.Button(control_frame, text=_('refresh'), command=self.refresh_products).grid(row=0, column=4, padx=2)
+        ttk.Button(control_frame, text=_('import_csv'), command=self.import_products_csv).grid(row=0, column=2, padx=2)
+        ttk.Button(control_frame, text=_('delete_product'), command=self.delete_product).grid(row=0, column=3, padx=2)
+        ttk.Button(control_frame, text=_('adjust_stock'), command=self.adjust_stock).grid(row=0, column=4, padx=2)
+        ttk.Button(control_frame, text=_('refresh'), command=self.refresh_products).grid(row=0, column=5, padx=2)
         
         # Search
-        ttk.Label(control_frame, text=_('search_label')).grid(row=0, column=5, padx=(10, 2))
+        ttk.Label(control_frame, text=_('search_label')).grid(row=0, column=6, padx=(10, 2))
         self.product_search_var = tk.StringVar()
         self.product_search_var.trace('w', self.on_product_search)
-        ttk.Entry(control_frame, textvariable=self.product_search_var, width=20).grid(row=0, column=6, padx=2)
+        ttk.Entry(control_frame, textvariable=self.product_search_var, width=20).grid(row=0, column=7, padx=2)
         
         # Products treeview
         products_tree_frame = ttk.Frame(self.products_frame)
@@ -656,6 +658,76 @@ class InventoryWindow:
         except Exception as e:
             session.rollback()
             messagebox.showerror("Error", f"Failed to edit product: {e}")
+        finally:
+            session.close()
+
+    def import_products_csv(self):
+        """Import products from a CSV file"""
+        file_path = filedialog.askopenfilename(
+            filetypes=[("CSV files", "*.csv")],
+            title=_('select_csv_file')
+        )
+        if not file_path:
+            return
+
+        session = db_manager.get_session()
+        imported = 0
+        try:
+            with open(file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    name = row.get('name') or row.get('Name')
+                    if not name:
+                        continue
+
+                    # Handle category
+                    category_name = row.get('category') or row.get('Category')
+                    category = None
+                    if category_name:
+                        category = session.query(Category).filter(Category.name == category_name).first()
+                        if not category:
+                            category = Category(name=category_name)
+                            session.add(category)
+                            session.flush()
+
+                    # Skip if product exists by barcode or name
+                    barcode = row.get('barcode') or row.get('Barcode')
+                    existing = None
+                    if barcode:
+                        existing = session.query(Product).filter(Product.barcode == barcode).first()
+                    if not existing:
+                        existing = session.query(Product).filter(Product.name == name).first()
+                    if existing:
+                        continue
+
+                    product = Product(
+                        name=name,
+                        description=row.get('description') or row.get('Description'),
+                        barcode=barcode,
+                        category_id=category.id if category else None,
+                        supplier_name=row.get('supplier_name') or row.get('Supplier'),
+                        unit=row.get('unit') or row.get('Unit') or 'piece',
+                        cost_price=float(row.get('cost_price') or row.get('Cost') or 0),
+                        selling_price=float(row.get('selling_price') or row.get('Price') or 0),
+                        stock_quantity=int(row.get('stock_quantity') or row.get('Stock') or 0),
+                        min_stock_level=int(row.get('min_stock_level') or row.get('Min Stock') or 0),
+                        is_active=True
+                    )
+                    session.add(product)
+                    session.flush()
+                    history = ProductHistory(product_id=product.id, name=product.name,
+                                             action='added', data=json.dumps(row))
+                    session.add(history)
+                    imported += 1
+
+            session.commit()
+            messagebox.showinfo("Success", _("imported_products").format(count=imported))
+            self.product_search_var.set('')
+            self.load_data()
+            self.notify_change()
+        except Exception as e:
+            session.rollback()
+            messagebox.showerror("Error", _("failed_import").format(error=e))
         finally:
             session.close()
     
