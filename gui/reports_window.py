@@ -557,15 +557,20 @@ class ReportsWindow:
     def generate_performance_report(self):
         """Generate product performance report"""
         try:
-            from_date = datetime.strptime(self.perf_from_date.get(), "%Y-%m-%d").date()
-            to_date = datetime.strptime(self.perf_to_date.get(), "%Y-%m-%d").date()
+            from_date = datetime.strptime(self.perf_from_date.get(), "%Y-%m-%d")
+            to_date = datetime.strptime(self.perf_to_date.get(), "%Y-%m-%d")
+
+            # Convert to full day range
+            start_dt = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = to_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
             sort_by = self.perf_sort_var.get()
-            
+
             session = db_manager.get_session()
             try:
                 # Query sale items in date range with product info
                 from sqlalchemy import func
-                
+
                 query = session.query(
                     Product.id,
                     Product.name,
@@ -580,10 +585,10 @@ class ReportsWindow:
                 .join(Sale, SaleItem.sale_id == Sale.id)\
                 .outerjoin(Category, Product.category_id == Category.id)\
                 .filter(
-                    Sale.created_at >= from_date,
-                    Sale.created_at <= to_date
+                    Sale.created_at >= start_dt,
+                    Sale.created_at <= end_dt
                 ).group_by(Product.id, Product.name, Category.name)
-                
+
                 # Apply sorting
                 if sort_by == "Quantity Sold":
                     query = query.order_by(func.sum(SaleItem.quantity).desc())
@@ -593,21 +598,21 @@ class ReportsWindow:
                     query = query.order_by(func.count(SaleItem.id).desc())
                 else:  # Profit
                     query = query.order_by(func.sum(SaleItem.total_price).desc())
-                
+
                 results = query.all()
-                
+
                 # Clear existing data
                 for item in self.performance_tree.get_children():
                     self.performance_tree.delete(item)
-                
+
                 if not results:
                     messagebox.showinfo("No Data", "No sales found for the selected date range.")
                     return
-                
+
                 # Populate treeview
                 for rank, result in enumerate(results, 1):
                     last_sold = result.last_sold.strftime('%Y-%m-%d') if result.last_sold else "N/A"
-                    
+
                     values = (
                         rank,
                         result.name,
@@ -619,10 +624,10 @@ class ReportsWindow:
                         last_sold
                     )
                     self.performance_tree.insert('', tk.END, values=values)
-                
+
             finally:
                 session.close()
-                
+
         except ValueError:
             messagebox.showerror("Invalid Date", "Please enter valid dates in YYYY-MM-DD format.")
         except Exception as e:
@@ -653,13 +658,17 @@ class ReportsWindow:
             else:  # Custom
                 from_date = datetime.strptime(self.fin_from_date.get(), "%Y-%m-%d").date()
                 to_date = datetime.strptime(self.fin_to_date.get(), "%Y-%m-%d").date()
-            
+
+            # Convert to full day range
+            start_dt = datetime.combine(from_date, datetime.min.time())
+            end_dt = datetime.combine(to_date, datetime.max.time())
+
             session = db_manager.get_session()
             try:
                 # Query sales in date range
                 sales = session.query(Sale).filter(
-                    Sale.created_at >= from_date,
-                    Sale.created_at <= to_date
+                    Sale.created_at >= start_dt,
+                    Sale.created_at <= end_dt
                 ).all()
                 
                 if not sales:
@@ -712,8 +721,8 @@ class ReportsWindow:
                 .join(Product, SaleItem.product_id == Product.id)\
                 .join(Sale, SaleItem.sale_id == Sale.id)\
                 .filter(
-                    Sale.created_at >= from_date,
-                    Sale.created_at <= to_date
+                    Sale.created_at >= start_dt,
+                    Sale.created_at <= end_dt
                 ).group_by(Product.id, Product.name)\
                 .order_by(func.sum(SaleItem.total_price).desc())\
                 .limit(5).all()
